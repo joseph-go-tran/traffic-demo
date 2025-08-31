@@ -1,0 +1,88 @@
+api:
+  dashboard: true
+  insecure: false
+
+entryPoints:
+  web:
+    address: :80
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+
+  websecure:
+    address: :443
+    http:
+      middlewares:
+        - secureHeaders@file
+        - nofloc@file
+      tls:
+        certResolver: letsencrypt
+
+  postgres:
+    address: :5432
+
+pilot:
+  dashboard: false
+
+providers:
+  docker:
+    endpoint: 'unix:///var/run/docker.sock'
+    exposedByDefault: false
+  file:
+    filename: /configurations/dynamic.yml
+
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      # caServer: "https://acme-staging-v02.api.letsencrypt.org/directory"
+      email: admin@ekila.vn
+      storage: acme.json
+      httpChallenge:
+        entryPoint: web
+      dnsChallenge:
+        provider: cloudflare
+        resolvers:
+          - darl.ns.cloudflare.com:53
+          - melina.ns.cloudflare.com:53
+
+  buypass:
+    acme:
+      email: admin@ekila.vn
+      storage: acme.json
+      caServer: https://api.buypass.com/acme/directory
+      httpChallenge:
+        entryPoint: web
+
+log:
+  level: INFO
+  filePath: /logs/traefik.log
+  format: json
+
+accessLog:
+  filePath: "/logs/access.log"
+  format: json
+  bufferingSize: 100
+  fields:
+    defaultMode: keep
+    names:
+      ClientUsername: drop
+      Cookie: drop
+    headers:
+      names:
+        User-Agent: keep
+        Referer: keep
+        Authorization: redact
+
+metrics:
+  influxDB2:
+    address: http://influxdb:8086
+    additionalLabels:
+      protocol: http
+      database: traefik
+      username: traefikuser
+      password: admin
+    addRoutersLabels: true
+    addServicesLabels: true
+    pushInterval: 60s

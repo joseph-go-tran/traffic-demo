@@ -1,0 +1,6 @@
+CREATE DATABASE traefik WITH DURATION 31d
+CREATE DATABASE telegraf WITH DURATION 31d
+CREATE USER traefikuser WITH PASSWORD 'Ekila@10724'
+CREATE USER telegrafuser WITH PASSWORD 'Ekila@10724'
+GRANT ALL ON traefik to traefikuser
+GRANT ALL ON telegraf to telegrafuser

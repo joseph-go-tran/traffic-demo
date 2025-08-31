@@ -1,0 +1,16 @@
+[tool.black]
+line-length = 80
+target-version = ['py311']
+exclude = '''
+/(
+    alembic
+|   __pycache__
+|   env
+|   .env
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 80
+skip = ["alembic", ".env", "env"]

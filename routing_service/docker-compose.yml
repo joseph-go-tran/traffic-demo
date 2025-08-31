@@ -1,0 +1,36 @@
+version: "3.7"
+
+services:
+    web:
+        build:
+            context: ./
+            dockerfile: Dockerfile
+        command: >
+            sh -c "./docker-entrypoint.sh && uvicorn main:app --reload"
+
+        volumes:
+            - .:/usr/src/app/
+        environment:
+            - DB_DEV_NAME=${DB_DEV_NAME}
+            - DB_DEV_USER=${DB_DEV_USER}
+            - DB_DEV_PASSWORD=${DB_DEV_PASSWORD}
+            - DB_DEV_HOST=${DB_DEV_HOST}
+            - DB_DEV_PORT=${DB_DEV_PORT}
+        ports:
+            - 8000:8000
+        depends_on:
+            - db
+    db:
+        image: postgres:14-alpine
+        volumes:
+            - fast_api_template_db:/var/lib/postgresql/data
+        environment:
+            - POSTGRES_USER=${DB_DEV_USER}
+            - POSTGRES_PASSWORD=${DB_DEV_PASSWORD}
+            - POSTGRES_DB=${DB_DEV_NAME}
+            - POSTGRES_HOST_AUTH_METHOD=trust
+        ports:
+            - 5432:5432
+
+volumes:
+    fast_api_template_db:

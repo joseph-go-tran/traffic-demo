@@ -1,0 +1,13 @@
+/logs/*.log {
+  daily
+  rotate 7
+  compress
+  delaycompress
+  missingok
+  notifempty
+  create 644 traefik traefik
+  sharedscripts
+  postrotate
+    docker kill --signal=HUP traefik
+  endscript
+}

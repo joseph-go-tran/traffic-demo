@@ -1,0 +1,57 @@
+# Dynamic configuration
+http:
+  services:
+    dummy:
+      loadBalancer:
+        servers:
+          - url: "http://127.0.0.1:80"
+  routers:
+    main:
+      rule: "Host(`ekila.vn`)"
+      entryPoints:
+        - web
+      middlewares:
+        - redirect-to-www
+      service: dummy
+  middlewares:
+    redirect-to-www:
+      redirectRegex:
+        regex: "^https?://ekila.vn(.*)"
+        replacement: "http://www.ekila.vn$1"
+        permanent: true
+    nofloc:
+      headers:
+        customResponseHeaders:
+          Permissions-Policy: 'interest-cohort=()'
+    secureHeaders:
+      headers:
+        sslRedirect: true
+        forceSTSHeader: true
+        stsIncludeSubdomains: true
+        stsPreload: true
+        stsSeconds: 31536000
+    request-limit:
+      rateLimit:
+        average: 100
+        burst: 50
+        period: 1m
+        sourceCriterion:
+          ipStrategy:
+            depth: 2
+
+    user-auth:
+      basicAuth:
+        users:
+          - ekila:$apr1$TW/CD4tX$f8TywIA5kT7YbTfg1xYYh1
+
+tls:
+  options:
+    default:
+      cipherSuites:
+        - TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+        - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+        - TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
+        - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+        - TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305
+        - TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305
+      minVersion: VersionTLS12
