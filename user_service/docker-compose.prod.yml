@@ -18,7 +18,7 @@ services:
     db:
         image: postgres:14-alpine
         volumes:
-          - django_template_db:/var/lib/postgresql/data
+            - django_template_db:/var/lib/postgresql/data
         environment:
             - POSTGRES_USER=${DB_USER}
             - POSTGRES_PASSWORD=${DB_PASSWORD}
