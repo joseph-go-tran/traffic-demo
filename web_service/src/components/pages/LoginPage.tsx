@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Mail, Lock, Eye, EyeOff, MapPin } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 interface LoginPageProps {
   onLogin: () => void;
@@ -9,6 +10,11 @@ interface LoginPageProps {
 export default function LoginPage({ onLogin, onRegister }: LoginPageProps) {
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const from = location.state?.from?.pathname || '/dashboard';
+
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -21,8 +27,10 @@ export default function LoginPage({ onLogin, onRegister }: LoginPageProps) {
     e.preventDefault();
     if (isLogin) {
       onLogin();
+      navigate(from, { replace: true });
     } else {
       onRegister();
+      navigate(from, { replace: true });
     }
   };
 
@@ -52,7 +60,7 @@ export default function LoginPage({ onLogin, onRegister }: LoginPageProps) {
               {isLogin ? 'Welcome Back' : 'Create Account'}
             </h2>
             <p className="text-gray-600 text-center">
-              {isLogin 
+              {isLogin
                 ? 'Sign in to access your saved routes and preferences'
                 : 'Join millions of users for smarter navigation'
               }

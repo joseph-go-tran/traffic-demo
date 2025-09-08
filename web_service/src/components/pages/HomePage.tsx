@@ -1,11 +1,21 @@
 import React from 'react';
 import { MapPin, Route, Shield, Zap, ArrowRight, Users, Clock, Award } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface HomePageProps {
-  onGetStarted: () => void;
+  onGetStarted?: () => void;
 }
 
 export default function HomePage({ onGetStarted }: HomePageProps) {
+  const navigate = useNavigate();
+
+  const handleGetStarted = () => {
+    if (onGetStarted) {
+      onGetStarted();
+    } else {
+      navigate('/routes');
+    }
+  };
   const features = [
     {
       icon: Route,
@@ -48,21 +58,21 @@ export default function HomePage({ onGetStarted }: HomePageProps) {
                 Real-Time Traffic
               </span>
             </h1>
-            
+
             <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-              Experience the future of navigation with intelligent route planning, live traffic updates, 
+              Experience the future of navigation with intelligent route planning, live traffic updates,
               and instant incident alerts. Get to your destination faster and safer.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <button
-                onClick={onGetStarted}
+                onClick={handleGetStarted}
                 className="bg-purple-600 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-purple-700 transition-colors duration-200 flex items-center justify-center space-x-2"
               >
                 <span>Start Planning Routes</span>
                 <ArrowRight className="h-5 w-5" />
               </button>
-              
+
               <button className="border-2 border-purple-600 text-purple-600 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-purple-50 transition-colors duration-200">
                 Watch Demo
               </button>
@@ -124,7 +134,7 @@ export default function HomePage({ onGetStarted }: HomePageProps) {
             Join millions of drivers who trust TrafficFlow for smarter, safer navigation.
           </p>
           <button
-            onClick={onGetStarted}
+            onClick={handleGetStarted}
             className="bg-white text-purple-600 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-gray-100 transition-colors duration-200 inline-flex items-center space-x-2"
           >
             <span>Get Started Free</span>

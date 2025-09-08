@@ -1,39 +1,31 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import Header from './components/Header';
 import HomePage from './components/pages/HomePage';
 import RoutePlanningPage from './components/pages/RoutePlanningPage';
 import NavigationPage from './components/pages/NavigationPage';
 import LoginPage from './components/pages/LoginPage';
 import DashboardPage from './components/pages/DashboardPage';
+import ProtectedRoute from './components/ProtectedRoute';
 
 export default function App() {
-  const [currentPage, setCurrentPage] = useState('home');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [showLogin, setShowLogin] = useState(false);
   const [notificationCount] = useState(2);
-
-  const handlePageChange = (page: string) => {
-    if (page === 'dashboard' && !isAuthenticated) {
-      setShowLogin(true);
-      return;
-    }
-    setCurrentPage(page);
-  };
 
   const handleLogin = () => {
     setIsAuthenticated(true);
-    setShowLogin(false);
-    setCurrentPage('dashboard');
   };
 
   const handleRegister = () => {
     setIsAuthenticated(true);
-    setShowLogin(false);
-    setCurrentPage('dashboard');
   };
 
-  const handleNavigate = (routeId: string) => {
-    setCurrentPage('navigation');
+  const handleLoginClick = () => {
+    if (isAuthenticated) {
+      // Handle profile/logout
+      setIsAuthenticated(false);
+    }
+    // Navigation to login page is handled by ProtectedRoute
   };
 
   const handleNotificationClick = () => {
@@ -41,37 +33,35 @@ export default function App() {
     console.log('Notifications clicked');
   };
 
-  if (showLogin) {
-    return <LoginPage onLogin={handleLogin} onRegister={handleRegister} />;
-  }
-
   return (
     <div className="min-h-screen bg-gray-50">
       <Header
-        currentPage={currentPage}
-        onPageChange={handlePageChange}
         isAuthenticated={isAuthenticated}
-        onLoginClick={() => setShowLogin(true)}
+        onLoginClick={handleLoginClick}
         onNotificationClick={handleNotificationClick}
         notificationCount={notificationCount}
       />
 
       <main>
-        {currentPage === 'home' && (
-          <HomePage onGetStarted={() => setCurrentPage('routes')} />
-        )}
-        {currentPage === 'routes' && (
-          <RoutePlanningPage onNavigate={handleNavigate} />
-        )}
-        {currentPage === 'navigation' && (
-          <NavigationPage />
-        )}
-        {currentPage === 'traffic' && (
-          <RoutePlanningPage onNavigate={handleNavigate} />
-        )}
-        {currentPage === 'dashboard' && isAuthenticated && (
-          <DashboardPage />
-        )}
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/routes" element={<RoutePlanningPage />} />
+          <Route path="/traffic" element={<RoutePlanningPage />} />
+          <Route path="/navigation" element={<NavigationPage />} />
+          <Route
+            path="/login"
+            element={<LoginPage onLogin={handleLogin} onRegister={handleRegister} />}
+          />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute isAuthenticated={isAuthenticated}>
+                <DashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
       </main>
     </div>
   );

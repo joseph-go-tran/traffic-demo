@@ -1,49 +1,55 @@
-import React from 'react';
 import { MapPin, Menu, User, Bell } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
 
 interface HeaderProps {
-  currentPage: string;
-  onPageChange: (page: string) => void;
   isAuthenticated: boolean;
   onLoginClick: () => void;
   onNotificationClick: () => void;
   notificationCount?: number;
 }
 
-export default function Header({ 
-  currentPage, 
-  onPageChange, 
-  isAuthenticated, 
-  onLoginClick, 
+export default function Header({
+  isAuthenticated,
+  onLoginClick,
   onNotificationClick,
-  notificationCount = 0 
+  notificationCount = 0
 }: HeaderProps) {
+  const location = useLocation();
+
+  const navItems = [
+    { path: '/', label: 'Home', key: 'home' },
+    { path: '/routes', label: 'Routes', key: 'routes' },
+    { path: '/traffic', label: 'Traffic', key: 'traffic' },
+    { path: '/dashboard', label: 'Dashboard', key: 'dashboard' },
+  ];
+
+  const currentPath = location.pathname;
   return (
     <header className="bg-white shadow-lg border-b-2 border-purple-600/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <div className="flex items-center space-x-3">
+          <Link to="/" className="flex items-center space-x-3">
             <div className="bg-gradient-to-r from-purple-600 to-purple-700 p-2 rounded-lg">
               <MapPin className="h-6 w-6 text-white" />
             </div>
             <span className="text-xl font-bold text-gray-900">TrafficFlow</span>
-          </div>
+          </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex space-x-8">
-            {['home', 'routes', 'traffic', 'dashboard'].map((page) => (
-              <button
-                key={page}
-                onClick={() => onPageChange(page)}
+            {navItems.map((item) => (
+              <Link
+                key={item.key}
+                to={item.path}
                 className={`px-3 py-2 text-sm font-medium transition-colors duration-200 ${
-                  currentPage === page
+                  currentPath === item.path
                     ? 'text-purple-600 border-b-2 border-purple-600'
                     : 'text-gray-600 hover:text-purple-600'
                 }`}
               >
-                {page.charAt(0).toUpperCase() + page.slice(1)}
-              </button>
+                {item.label}
+              </Link>
             ))}
           </nav>
 
@@ -62,7 +68,7 @@ export default function Header({
                 )}
               </button>
             )}
-            
+
             <button
               onClick={onLoginClick}
               className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${

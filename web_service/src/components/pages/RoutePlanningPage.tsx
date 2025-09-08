@@ -1,16 +1,26 @@
 import React, { useState } from 'react';
 import { Search, MapPin, Clock, Repeat } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import MapPlaceholder from '../MapPlaceholder';
 import RouteCard from '../RouteCard';
 
 interface RoutePlanningPageProps {
-  onNavigate: (routeId: string) => void;
+  onNavigate?: (routeId: string) => void;
 }
 
 export default function RoutePlanningPage({ onNavigate }: RoutePlanningPageProps) {
   const [fromLocation, setFromLocation] = useState('');
   const [toLocation, setToLocation] = useState('');
   const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  const handleNavigate = (routeId: string) => {
+    if (onNavigate) {
+      onNavigate(routeId);
+    } else {
+      navigate('/navigation');
+    }
+  };
 
   const mockRoutes = [
     {
@@ -126,7 +136,7 @@ export default function RoutePlanningPage({ onNavigate }: RoutePlanningPageProps
                 route={route}
                 isSelected={selectedRoute === route.id}
                 onSelect={() => setSelectedRoute(route.id)}
-                onNavigate={() => onNavigate(route.id)}
+                onNavigate={() => handleNavigate(route.id)}
               />
             ))}
           </div>
@@ -134,11 +144,11 @@ export default function RoutePlanningPage({ onNavigate }: RoutePlanningPageProps
 
         {/* Right Panel - Map */}
         <div className="space-y-6">
-          <MapPlaceholder 
+          <MapPlaceholder
             currentLocation={fromLocation || 'Current Location'}
             destination={toLocation || 'Destination'}
           />
-          
+
           {selectedRoute && (
             <div className="bg-white p-6 rounded-lg shadow-lg border border-gray-200">
               <h3 className="font-semibold text-gray-900 mb-4">Route Summary</h3>
