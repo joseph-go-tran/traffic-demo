@@ -1,13 +1,14 @@
 import React from 'react';
-import { MapPin, Clock, Route, TrendingUp, Calendar, Settings, Star } from 'lucide-react';
+import { MapPin, Clock, Route, TrendingUp, Calendar, Settings, Star, Loader2 } from 'lucide-react';
+import { useUserProfile, useRecentRoutes, useFavoriteRoutes } from '../../hooks/useUser';
 
 export default function DashboardPage() {
-  const recentRoutes = [
-    { id: '1', from: 'Home', to: 'Office', time: '25 min', distance: '12.3 mi', frequency: 'Daily' },
-    { id: '2', from: 'Office', to: 'Gym', time: '15 min', distance: '6.8 mi', frequency: 'Weekly' },
-    { id: '3', from: 'Home', to: 'Shopping Mall', time: '20 min', distance: '9.1 mi', frequency: 'Occasional' }
-  ];
+  // API calls using React Query hooks
+  const { data: userProfile, isLoading: profileLoading, error: profileError } = useUserProfile();
+  const { data: recentRoutes, isLoading: routesLoading } = useRecentRoutes();
+  const { data: favoriteRoutes, isLoading: favoritesLoading } = useFavoriteRoutes();
 
+  // Mock stats - in a real app, these would come from API
   const stats = [
     { label: 'Routes This Month', value: '42', icon: Route, color: 'text-purple-600 bg-purple-100' },
     { label: 'Time Saved', value: '3.2h', icon: Clock, color: 'text-blue-600 bg-blue-100' },
@@ -15,11 +16,31 @@ export default function DashboardPage() {
     { label: 'Efficiency Score', value: '94%', icon: TrendingUp, color: 'text-orange-600 bg-orange-100' }
   ];
 
+  // Fallback data for development
+  const fallbackRecentRoutes = [
+    { id: '1', from: 'Home', to: 'Office', time: '25 min', distance: '12.3 mi', frequency: 'Daily' },
+    { id: '2', from: 'Office', to: 'Gym', time: '15 min', distance: '6.8 mi', frequency: 'Weekly' },
+    { id: '3', from: 'Home', to: 'Shopping Mall', time: '20 min', distance: '9.1 mi', frequency: 'Occasional' }
+  ];
+
+  const displayRoutes = recentRoutes || fallbackRecentRoutes;
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
-        <p className="text-gray-600">Welcome back! Here's your navigation summary.</p>
+        <p className="text-gray-600">
+          Welcome back{userProfile?.firstName ? `, ${userProfile.firstName}` : ''}! Here's your navigation summary.
+        </p>
+
+        {/* Profile Error */}
+        {profileError && (
+          <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+            <p className="text-yellow-600 text-sm">
+              Note: Using demo data. API connection not available.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Stats Grid */}
@@ -49,7 +70,13 @@ export default function DashboardPage() {
             </div>
 
             <div className="space-y-4">
-              {recentRoutes.map((route) => (
+              {routesLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
+                  <span className="ml-2 text-gray-600">Loading routes...</span>
+                </div>
+              ) : (
+                displayRoutes.map((route) => (
                 <div key={route.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200">
                   <div className="flex items-center space-x-4">
                     <div className="flex flex-col items-center space-y-1">
@@ -64,7 +91,7 @@ export default function DashboardPage() {
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center space-x-2">
                     <button className="text-yellow-400 hover:text-yellow-500">
                       <Star className="h-4 w-4" />
@@ -74,7 +101,8 @@ export default function DashboardPage() {
                     </button>
                   </div>
                 </div>
-              ))}
+              ))
+              )}
             </div>
           </div>
         </div>
@@ -84,23 +112,23 @@ export default function DashboardPage() {
           {/* Quick Actions */}
           <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
-            
+
             <div className="space-y-3">
               <button className="w-full flex items-center space-x-3 p-3 text-left rounded-lg border border-gray-200 hover:bg-purple-50 hover:border-purple-300 transition-colors duration-200">
                 <Route className="h-5 w-5 text-purple-600" />
                 <span className="font-medium text-gray-900">Plan New Route</span>
               </button>
-              
+
               <button className="w-full flex items-center space-x-3 p-3 text-left rounded-lg border border-gray-200 hover:bg-blue-50 hover:border-blue-300 transition-colors duration-200">
                 <Star className="h-5 w-5 text-blue-600" />
                 <span className="font-medium text-gray-900">Saved Places</span>
               </button>
-              
+
               <button className="w-full flex items-center space-x-3 p-3 text-left rounded-lg border border-gray-200 hover:bg-green-50 hover:border-green-300 transition-colors duration-200">
                 <Calendar className="h-5 w-5 text-green-600" />
                 <span className="font-medium text-gray-900">Trip History</span>
               </button>
-              
+
               <button className="w-full flex items-center space-x-3 p-3 text-left rounded-lg border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-colors duration-200">
                 <Settings className="h-5 w-5 text-gray-600" />
                 <span className="font-medium text-gray-900">Settings</span>
@@ -111,18 +139,18 @@ export default function DashboardPage() {
           {/* Traffic Summary */}
           <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-6">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Traffic Summary</h2>
-            
+
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Current Conditions</span>
                 <span className="text-green-600 font-medium">Good</span>
               </div>
-              
+
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Active Incidents</span>
                 <span className="text-orange-600 font-medium">3 nearby</span>
               </div>
-              
+
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Best Time to Travel</span>
                 <span className="text-blue-600 font-medium">Now - 2 PM</span>

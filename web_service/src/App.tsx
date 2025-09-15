@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import Header from './components/Header';
 import HomePage from './components/pages/HomePage';
 import RoutePlanningPage from './components/pages/RoutePlanningPage';
@@ -7,10 +7,45 @@ import NavigationPage from './components/pages/NavigationPage';
 import LoginPage from './components/pages/LoginPage';
 import DashboardPage from './components/pages/DashboardPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import { isAuthenticated as checkAuth, hasValidAuthentication, clearTokens } from './lib/tokenUtils';
 
 export default function App() {
+  const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [notificationCount] = useState(2);
+
+  // Check authentication status on app initialization
+  useEffect(() => {
+    const checkAuthStatus = () => {
+      const hasValidAuth = hasValidAuthentication();
+
+      if (!hasValidAuth && checkAuth()) {
+        // If we have tokens but they're all expired, clear them
+        clearTokens();
+        setIsAuthenticated(false);
+      } else {
+        setIsAuthenticated(hasValidAuth);
+      }
+
+      setIsLoading(false);
+    };
+
+    checkAuthStatus();
+
+    // Listen for storage changes (login/logout in other tabs)
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'accessToken' || e.key === 'authToken' || e.key === 'refreshToken') {
+        checkAuthStatus();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
 
   const handleLogin = () => {
     setIsAuthenticated(true);
@@ -20,18 +55,34 @@ export default function App() {
     setIsAuthenticated(true);
   };
 
+  const handleLogout = () => {
+    clearTokens();
+    setIsAuthenticated(false);
+    navigate('/');
+  };
+
   const handleLoginClick = () => {
     if (isAuthenticated) {
-      // Handle profile/logout
-      setIsAuthenticated(false);
+      handleLogout();
+    } else {
+      // Navigation to login page
+      navigate('/login');
     }
-    // Navigation to login page is handled by ProtectedRoute
   };
 
   const handleNotificationClick = () => {
     // Handle notification click
     console.log('Notifications clicked');
   };
+
+  // Show loading spinner while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">

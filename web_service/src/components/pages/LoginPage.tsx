@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { Mail, Lock, Eye, EyeOff, MapPin } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, MapPin, Loader2 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useLogin, useRegister } from '../../hooks/useAuth';
 
 interface LoginPageProps {
   onLogin: () => void;
@@ -15,6 +16,10 @@ export default function LoginPage({ onLogin, onRegister }: LoginPageProps) {
 
   const from = location.state?.from?.pathname || '/dashboard';
 
+  // React Query hooks
+  const loginMutation = useLogin();
+  const registerMutation = useRegister();
+
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -23,16 +28,35 @@ export default function LoginPage({ onLogin, onRegister }: LoginPageProps) {
     lastName: ''
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isLogin) {
-      onLogin();
-      navigate(from, { replace: true });
-    } else {
-      onRegister();
-      navigate(from, { replace: true });
+
+    try {
+      if (isLogin) {
+        await loginMutation.mutateAsync({
+          email: formData.email,
+          password: formData.password,
+        });
+        onLogin();
+        navigate(from, { replace: true });
+      } else {
+        await registerMutation.mutateAsync({
+          email: formData.email,
+          password: formData.password,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+        });
+        onRegister();
+        navigate(from, { replace: true });
+      }
+    } catch (error) {
+      console.error('Authentication error:', error);
+      // Error handling is done by React Query
     }
   };
+
+  const isLoading = loginMutation.isPending || registerMutation.isPending;
+  const error = loginMutation.error || registerMutation.error;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -176,11 +200,28 @@ export default function LoginPage({ onLogin, onRegister }: LoginPageProps) {
               </div>
             )}
 
+            {/* Error Display */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                <p className="text-red-600 text-sm">
+                  {error?.response?.data?.message || 'An error occurred during authentication'}
+                </p>
+              </div>
+            )}
+
             <button
               type="submit"
-              className="w-full bg-purple-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-purple-700 transition-colors duration-200"
+              disabled={isLoading}
+              className="w-full bg-purple-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-purple-700 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
-              {isLogin ? 'Sign In' : 'Create Account'}
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  {isLogin ? 'Signing In...' : 'Creating Account...'}
+                </>
+              ) : (
+                isLogin ? 'Sign In' : 'Create Account'
+              )}
             </button>
           </form>
 

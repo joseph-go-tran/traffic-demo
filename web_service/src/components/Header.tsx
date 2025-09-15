@@ -1,5 +1,6 @@
-import { MapPin, Menu, User, Bell } from 'lucide-react';
+import { MapPin, Menu, User, Bell, LogOut } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
+import { useNotificationCount } from '../hooks/useNotifications';
 
 interface HeaderProps {
   isAuthenticated: boolean;
@@ -12,9 +13,13 @@ export default function Header({
   isAuthenticated,
   onLoginClick,
   onNotificationClick,
-  notificationCount = 0
+  notificationCount
 }: HeaderProps) {
   const location = useLocation();
+
+  // Use API hook for notification count, fallback to prop
+  const { data: apiNotificationCount } = useNotificationCount();
+  const displayCount = apiNotificationCount ?? notificationCount ?? 0;
 
   const navItems = [
     { path: '/', label: 'Home', key: 'home' },
@@ -69,17 +74,23 @@ export default function Header({
               </button>
             )}
 
-            <button
-              onClick={onLoginClick}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-lg font-medium transition-colors duration-200 ${
-                isAuthenticated
-                  ? 'text-gray-600 hover:text-purple-600'
-                  : 'bg-purple-600 text-white hover:bg-purple-700'
-              }`}
-            >
-              <User className="h-4 w-4" />
-              <span>{isAuthenticated ? 'Profile' : 'Login'}</span>
-            </button>
+            {isAuthenticated ? (
+              <button
+                onClick={onLoginClick}
+                className="flex items-center space-x-2 px-4 py-2 rounded-lg font-medium text-gray-600 hover:text-red-600 hover:bg-red-50 transition-colors duration-200"
+              >
+                <LogOut className="h-4 w-4" />
+                <span>Logout</span>
+              </button>
+            ) : (
+              <button
+                onClick={onLoginClick}
+                className="flex items-center space-x-2 px-4 py-2 rounded-lg font-medium bg-purple-600 text-white hover:bg-purple-700 transition-colors duration-200"
+              >
+                <User className="h-4 w-4" />
+                <span>Login</span>
+              </button>
+            )}
 
             {/* Mobile Menu */}
             <button className="md:hidden p-2 text-gray-600 hover:text-purple-600">

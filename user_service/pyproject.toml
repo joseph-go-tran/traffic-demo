@@ -7,10 +7,11 @@ exclude = '''
 |   __pycache__
 |   env
 |   .env
+|   __init__.py
 )/
 '''
 
 [tool.isort]
 profile = "black"
 line_length = 80
-skip = ["alembic", ".env", "env"]
+skip = ["alembic", ".env", "env", "__init__.py"]
