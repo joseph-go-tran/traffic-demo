@@ -96,7 +96,23 @@ export default function App() {
       <main>
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/routes" element={<RoutePlanningPage />} />
+          <Route
+            path="/routes"
+            element={
+              <RoutePlanningPage
+                onNavigate={(routeId, routeData) => {
+                  navigate('/navigation', {
+                    state: {
+                      routeId,
+                      route: routeData?.data,
+                      fromLocation: routeData?.fromLocation,
+                      toLocation: routeData?.toLocation
+                    }
+                  });
+                }}
+              />
+            }
+          />
           <Route path="/traffic" element={<RoutePlanningPage />} />
           <Route path="/navigation" element={<NavigationPage />} />
           <Route

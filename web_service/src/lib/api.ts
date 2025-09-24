@@ -1,13 +1,23 @@
 import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
 
-// Base API URL - you can set this from environment variables
+// Base API URLs - you can set these from environment variables
 const API_BASE_URL =
     import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1";
+const ROUTING_API_URL =
+    import.meta.env.VITE_ROUTING_API_URL || "http://localhost:8001/api/v1";
 
-// Create axios instance
+// Create axios instances
 export const api = axios.create({
     baseURL: API_BASE_URL,
     timeout: 10000,
+    headers: {
+        "Content-Type": "application/json",
+    },
+});
+
+export const routingApi = axios.create({
+    baseURL: ROUTING_API_URL,
+    timeout: 30000, // Longer timeout for routing calculations
     headers: {
         "Content-Type": "application/json",
     },
@@ -107,19 +117,69 @@ export const apiService = {
         refreshToken: () => api.post("/auth/refresh/"),
     },
 
-    // Routes
+    // Routes (Using TomTom API via routing service)
     routes: {
-        planRoute: (routeData: {
-            from: string;
-            to: string;
-            preferences?: {
-                routeType?: "fastest" | "shortest" | "eco";
-                avoidTolls?: boolean;
-                avoidHighways?: boolean;
+        calculateRoute: (routeData: {
+            origin: { lat: number; lng: number };
+            destination: { lat: number; lng: number };
+            waypoints?: { lat: number; lng: number }[];
+            options?: {
+                route_type?: "fastest" | "shortest" | "eco";
+                avoid_tolls?: boolean;
+                avoid_highways?: boolean;
+                avoid_ferries?: boolean;
+                avoid_unpaved?: boolean;
+                vehicle_type?:
+                    | "car"
+                    | "truck"
+                    | "taxi"
+                    | "bus"
+                    | "van"
+                    | "motorcycle"
+                    | "bicycle"
+                    | "pedestrian";
             };
-        }) => api.post("/routes/plan", routeData),
+        }) => routingApi.post("/routes/calculate", routeData),
+
+        calculateEnhancedRoute: (routeData: {
+            origin: { lat: number; lng: number };
+            destination: { lat: number; lng: number };
+            waypoints?: { lat: number; lng: number }[];
+            options?: {
+                route_type?: "fastest" | "shortest" | "eco";
+                avoid_tolls?: boolean;
+                avoid_highways?: boolean;
+                avoid_ferries?: boolean;
+                avoid_unpaved?: boolean;
+                vehicle_type?:
+                    | "car"
+                    | "truck"
+                    | "taxi"
+                    | "bus"
+                    | "van"
+                    | "motorcycle"
+                    | "bicycle"
+                    | "pedestrian";
+            };
+        }) => routingApi.post("/routes/calculate-enhanced", routeData),
+
+        searchPlaces: (searchData: {
+            query: string;
+            coordinates?: { lat: number; lng: number };
+            radius?: number;
+        }) => routingApi.post("/routes/search/", searchData),
+
+        getTrafficInfo: (trafficData: {
+            coordinates: { lat: number; lng: number };
+            zoom_level?: number;
+        }) => routingApi.post("/routes/traffic", trafficData),
+
+        getRouteTypes: () => routingApi.get("/routes/route-types"),
+
+        // Legacy endpoints (if you still need them for user data persistence)
         getRoute: (routeId: string) => api.get(`/routes/${routeId}`),
         getRoutes: () => api.get("/routes"),
+        saveRoute: (routeData: any) => api.post("/routes", routeData),
         updateRoutePreferences: (routeId: string, preferences: any) =>
             api.put(`/routes/${routeId}/preferences`, preferences),
         deleteRoute: (routeId: string) => api.delete(`/routes/${routeId}`),

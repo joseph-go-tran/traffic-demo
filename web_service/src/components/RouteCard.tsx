@@ -10,6 +10,7 @@ interface RouteCardProps {
     delay?: string;
     incidents: number;
     traffic: 'light' | 'moderate' | 'heavy';
+    data?: any; // Additional route data from API
   };
   isSelected?: boolean;
   onSelect: () => void;
@@ -27,10 +28,10 @@ export default function RouteCard({ route, isSelected, onSelect, onNavigate }: R
   };
 
   return (
-    <div 
+    <div
       className={`p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 hover:shadow-md ${
-        isSelected 
-          ? 'border-purple-600 bg-purple-50' 
+        isSelected
+          ? 'border-purple-600 bg-purple-50'
           : 'border-gray-200 bg-white hover:border-purple-300'
       }`}
       onClick={onSelect}
@@ -68,7 +69,11 @@ export default function RouteCard({ route, isSelected, onSelect, onNavigate }: R
           e.stopPropagation();
           onNavigate();
         }}
-        className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 transition-colors duration-200 flex items-center justify-center space-x-2"
+        className={`w-full py-2 px-4 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2 font-medium ${
+          isSelected
+            ? 'bg-purple-600 text-white hover:bg-purple-700 shadow-lg'
+            : 'bg-gray-100 text-gray-700 hover:bg-purple-600 hover:text-white'
+        }`}
       >
         <Navigation className="h-4 w-4" />
         <span>Start Navigation</span>

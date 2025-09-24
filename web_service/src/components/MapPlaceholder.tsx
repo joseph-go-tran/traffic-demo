@@ -33,13 +33,13 @@ export default function MapPlaceholder({ isNavigating, currentLocation, destinat
               </div>
             )}
           </div>
-          
+
           <h3 className="font-semibold text-gray-900 mb-2">
             {isNavigating ? 'Live Navigation' : 'Interactive Map'}
           </h3>
-          
+
           <p className="text-sm text-gray-600 mb-4">
-            {isNavigating 
+            {isNavigating
               ? 'Real-time GPS navigation with traffic updates'
               : 'Plan your route with live traffic data'
             }
@@ -48,11 +48,11 @@ export default function MapPlaceholder({ isNavigating, currentLocation, destinat
           {currentLocation && destination && (
             <div className="space-y-2 text-left">
               <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                <div className="w-3 h-3 min-w-3 bg-green-500 rounded-full"></div>
                 <span className="text-sm text-gray-700">{currentLocation}</span>
               </div>
               <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                <div className="w-3 h-3 min-w-3 bg-red-500 rounded-full"></div>
                 <span className="text-sm text-gray-700">{destination}</span>
               </div>
             </div>

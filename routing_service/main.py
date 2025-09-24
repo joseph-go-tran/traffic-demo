@@ -3,7 +3,7 @@ from dotenv import dotenv_values
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.v1.routes import users
+from app.api.v1.routes import routing, users
 
 config = dotenv_values(".env")
 
@@ -16,10 +16,10 @@ sentry_sdk.init(
 )
 
 app = FastAPI(
-    title="EkAi API Service",
+    title="TrafficFlow Routing Service",
     description=(
-        "AI-powered API service with multi-provider support and "
-        "content processing capabilities"
+        "Routing service with TomTom API integration for route planning, "
+        "traffic information, and place search capabilities"
     ),
     version="1.0.0",
 )
@@ -35,13 +35,14 @@ app.add_middleware(
 
 # Include routers
 app.include_router(router=users.router, prefix="/api/v1")
+app.include_router(router=routing.router, prefix="/api/v1")
 
 
 @app.get("/")
 async def root():
-    return {"message": "EkAi API Service", "version": "1.0.0"}
+    return {"message": "TrafficFlow Routing Service", "version": "1.0.0"}
 
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy", "service": "EkAi API"}
+    return {"status": "healthy", "service": "TrafficFlow Routing Service"}
