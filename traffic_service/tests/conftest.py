@@ -10,7 +10,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.api.v1.models import Base
-from app.api.v1.routes import users
+from traffic_service.app.api.v1.routes import traffic_incidents
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # this is to include backend dir in sys.path
@@ -27,7 +27,7 @@ SQLALCHEMY_DATABASE_URL = (
 
 def start_application():
     app = FastAPI()
-    app.include_router(users.router)
+    app.include_router(traffic_incidents.router)
     return app
 
 

@@ -3,7 +3,9 @@ from dotenv import dotenv_values
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.v1.routes import users
+from app.api.database import engine
+from app.api.v1.models import Base
+from app.api.v1.routes import traffic_incidents
 
 config = dotenv_values(".env")
 
@@ -15,11 +17,14 @@ sentry_sdk.init(
     traces_sample_rate=1.0,
 )
 
+# Create database tables
+Base.metadata.create_all(bind=engine)
+
 app = FastAPI(
-    title="EkAi API Service",
+    title="Traffic Service API",
     description=(
-        "AI-powered API service with multi-provider support and "
-        "content processing capabilities"
+        "Traffic incident reporting and management service with "
+        "real-time notifications and route-based incident detection"
     ),
     version="1.0.0",
 )
@@ -34,14 +39,14 @@ app.add_middleware(
 )
 
 # Include routers
-app.include_router(router=users.router, prefix="/api/v1")
+app.include_router(router=traffic_incidents.router, prefix="/api/v1")
 
 
 @app.get("/")
 async def root():
-    return {"message": "EkAi API Service", "version": "1.0.0"}
+    return {"message": "Traffic Service API", "version": "1.0.0"}
 
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy", "service": "EkAi API"}
+    return {"status": "healthy", "service": "Traffic Service"}
