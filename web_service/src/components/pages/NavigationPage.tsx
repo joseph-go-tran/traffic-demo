@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { Navigation, Volume2, VolumeX, RotateCcw, Phone, ArrowLeft, ArrowRight, Home } from 'lucide-react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import NavigationMap from '../NavigationMap';
+import { useState, useEffect } from 'react';
+import { Navigation, Volume2, VolumeX, RotateCcw, Phone, AlertTriangle } from 'lucide-react';
+import MapPlaceholder from '../MapPlaceholder';
 import IncidentAlert from '../IncidentAlert';
-
+import TrafficReportModal from '../TrafficReportModal';
+import TrafficIncidentsList from '../TrafficIncidentsList';
+import { useTrafficIncidents } from '../../hooks/useTrafficIncidents';
 import { useGeolocation } from '../../hooks/useGeolocation';
 
 interface NavigationPageProps {
@@ -11,33 +12,31 @@ interface NavigationPageProps {
 }
 
 export default function NavigationPage({ routeId }: NavigationPageProps) {
-  const location = useLocation();
-  const navigate = useNavigate();
   const [isMuted, setIsMuted] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
-  const [showTrafficStress, setShowTrafficStress] = useState(true);
+  const [timeRemaining, setTimeRemaining] = useState(27 * 60); // 27 minutes in seconds
+  const [showReportModal, setShowReportModal] = useState(false);
 
   // Get user's current location
-  const { latitude, longitude, error: locationError } = useGeolocation({
+  const { latitude, longitude } = useGeolocation({
     enableHighAccuracy: true,
     timeout: 10000,
     maximumAge: 60000
   });
 
-  // Get route data from navigation state or use default
-  const routeData = location.state?.route as RouteResponse | undefined;
-  const fromLocation = location.state?.fromLocation || 'Current Location';
-  const toLocation = location.state?.toLocation || 'Destination';
-  const routeIdFromState = location.state?.routeId || routeId || '1';
+  // Traffic incidents management
+  const {
+    incidents,
+    voteOnIncident,
+    refreshIncidents
+  } = useTrafficIncidents({
+    location: latitude && longitude ? { lat: latitude, lng: longitude } : undefined,
+    radius: 15.0, // 15km radius
+    autoRefresh: true,
+    refreshInterval: 60000 // 1 minute
+  });
 
-  const [timeRemaining, setTimeRemaining] = useState(
-    routeData?.total_duration || 27 * 60
-  );
-
-  // Extract navigation instructions from route data
-  const navigationSteps = routeData?.segments?.[0]?.instructions?.map(
-    instruction => instruction.instruction
-  ) || [
+  const navigationSteps = [
     'Head north on Main St toward Oak Ave',
     'Turn right onto Highway 101',
     'Continue straight for 15 miles',
@@ -71,19 +70,6 @@ export default function NavigationPage({ routeId }: NavigationPageProps) {
   const handleRecalculate = () => {
     // Simulate route recalculation
     setTimeRemaining(32 * 60);
-    setCurrentStep(0);
-  };
-
-  const handleStopNavigation = () => {
-    navigate('/routes');
-  };
-
-  const nextStep = () => {
-    setCurrentStep(prev => Math.min(prev + 1, navigationSteps.length - 1));
-  };
-
-  const previousStep = () => {
-    setCurrentStep(prev => Math.max(prev - 1, 0));
   };
 
   return (
@@ -97,22 +83,11 @@ export default function NavigationPage({ routeId }: NavigationPageProps) {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Active Navigation</h1>
-              <p className="text-gray-600">Route #{routeIdFromState} - {routeData ? 'Live Route' : 'Demo Route'}</p>
-              <p className="text-sm text-gray-500">{fromLocation} → {toLocation}</p>
+              <p className="text-gray-600">Route #{routeId || '1'} - Fastest Route</p>
             </div>
           </div>
 
           <div className="flex items-center space-x-3">
-            <button
-              onClick={() => setShowTrafficStress(!showTrafficStress)}
-              className={`p-3 rounded-lg transition-colors duration-200 ${
-                showTrafficStress ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-600'
-              }`}
-              title="Toggle Traffic Stress View"
-            >
-              <Navigation className="h-5 w-5" />
-            </button>
-
             <button
               onClick={() => setIsMuted(!isMuted)}
               className={`p-3 rounded-lg transition-colors duration-200 ${
@@ -132,14 +107,6 @@ export default function NavigationPage({ routeId }: NavigationPageProps) {
             <button className="p-3 bg-green-100 text-green-600 rounded-lg hover:bg-green-200 transition-colors duration-200">
               <Phone className="h-5 w-5" />
             </button>
-
-            <button
-              onClick={handleStopNavigation}
-              className="p-3 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors duration-200"
-              title="Stop Navigation"
-            >
-              <Home className="h-5 w-5" />
-            </button>
           </div>
         </div>
 
@@ -150,15 +117,11 @@ export default function NavigationPage({ routeId }: NavigationPageProps) {
             <div className="text-sm text-gray-600">Time Remaining</div>
           </div>
           <div className="text-center p-4 bg-blue-50 rounded-lg">
-            <div className="text-2xl font-bold text-blue-600">
-              {routeData ? `${(routeData.total_distance / 1609.34).toFixed(1)} mi` : '18.2 mi'}
-            </div>
+            <div className="text-2xl font-bold text-blue-600">18.2 mi</div>
             <div className="text-sm text-gray-600">Distance Left</div>
           </div>
           <div className="text-center p-4 bg-green-50 rounded-lg">
-            <div className="text-2xl font-bold text-green-600">
-              {new Date(Date.now() + timeRemaining * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-            </div>
+            <div className="text-2xl font-bold text-green-600">3:45 PM</div>
             <div className="text-sm text-gray-600">Arrival Time</div>
           </div>
         </div>
@@ -167,53 +130,17 @@ export default function NavigationPage({ routeId }: NavigationPageProps) {
       <div className="grid lg:grid-cols-3 gap-6">
         {/* Map and Navigation */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="h-96 rounded-lg overflow-hidden shadow-lg">
-            <NavigationMap
-              routeData={routeData}
-              fromLocation={fromLocation}
-              toLocation={toLocation}
-              currentStep={currentStep}
-              isNavigating={true}
-              userLocation={latitude && longitude ? { lat: latitude, lng: longitude } : undefined}
-              showTrafficStress={showTrafficStress}
-            />
-          </div>
-
-          {/* Location permission alert */}
-          {locationError && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <div className="flex items-center">
-                <div className="text-yellow-800">
-                  <strong>Location Access:</strong> {locationError}
-                </div>
-              </div>
-              <div className="text-sm text-yellow-700 mt-1">
-                Enable location access to see your position on the map and get accurate navigation.
-              </div>
-            </div>
-          )}
+          <MapPlaceholder
+            isNavigating={true}
+            currentLocation="Main Street"
+            destination="Business District"
+          />
 
           {/* Current Direction */}
           <div className="bg-white rounded-lg shadow-lg p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-gray-900">Current Direction</h2>
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={previousStep}
-                  disabled={currentStep === 0}
-                  className="p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                </button>
-                <span className="text-sm text-gray-500">Step {currentStep + 1} of {navigationSteps.length}</span>
-                <button
-                  onClick={nextStep}
-                  disabled={currentStep === navigationSteps.length - 1}
-                  className="p-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <ArrowRight className="h-4 w-4" />
-                </button>
-              </div>
+              <span className="text-sm text-gray-500">Step {currentStep + 1} of {navigationSteps.length}</span>
             </div>
 
             <div className="text-lg font-medium text-purple-600 mb-4">
@@ -269,6 +196,17 @@ export default function NavigationPage({ routeId }: NavigationPageProps) {
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
 
             <div className="space-y-3">
+              <button
+                onClick={() => setShowReportModal(true)}
+                className="w-full text-left p-3 rounded-lg border-2 border-red-200 bg-red-50 hover:bg-red-100 transition-colors duration-200"
+              >
+                <div className="flex items-center space-x-2">
+                  <AlertTriangle className="h-5 w-5 text-red-600" />
+                  <div className="font-medium text-red-900">Report Traffic Incident</div>
+                </div>
+                <div className="text-sm text-red-700 mt-1">Alert other drivers about hazards</div>
+              </button>
+
               <button className="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors duration-200">
                 <div className="font-medium text-gray-900">Find Gas Stations</div>
                 <div className="text-sm text-gray-600">Along your route</div>
@@ -285,8 +223,33 @@ export default function NavigationPage({ routeId }: NavigationPageProps) {
               </button>
             </div>
           </div>
+
+          {/* Traffic Incidents List */}
+          {incidents.length > 0 && (
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                Nearby Incidents ({incidents.length})
+              </h2>
+              <TrafficIncidentsList
+                incidents={incidents}
+                onVote={voteOnIncident}
+                showVoting={true}
+              />
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Traffic Report Modal */}
+      <TrafficReportModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        initialLocation={latitude && longitude ? { lat: latitude, lng: longitude } : undefined}
+        onReportSubmitted={(report) => {
+          console.log('Report submitted:', report);
+          refreshIncidents();
+        }}
+      />
     </div>
   );
 }

@@ -59,19 +59,3 @@ export const useUpdateIncident = () => {
         },
     });
 };
-
-// Hook for getting traffic predictions
-export const useTrafficPredictions = (
-    location: { lat: number; lng: number },
-    timeRange?: string
-) => {
-    return useQuery({
-        queryKey: ["traffic", "predictions", location, timeRange],
-        queryFn: () =>
-            apiService.traffic.getTrafficPredictions?.(location, timeRange) ||
-            Promise.reject("Not implemented"),
-        select: (data) => data.data,
-        enabled: !!(location.lat && location.lng),
-        staleTime: 5 * 60 * 1000, // 5 minutes
-    });
-};

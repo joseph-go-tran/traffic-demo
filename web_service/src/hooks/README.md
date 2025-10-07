@@ -82,9 +82,6 @@ const { data: incidents } = useTrafficIncidents();
 // Report new incident
 const reportMutation = useReportIncident();
 await reportMutation.mutateAsync({ type, location, description });
-
-// Get traffic predictions
-const { data: predictions } = useTrafficPredictions(location, '1h');
 ```
 
 ### User Hooks (`useUser.ts`)

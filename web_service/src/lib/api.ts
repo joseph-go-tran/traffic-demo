@@ -5,6 +5,8 @@ const API_BASE_URL =
     import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1";
 const ROUTING_API_URL =
     import.meta.env.VITE_ROUTING_API_URL || "http://localhost:8001/api/v1";
+const TRAFFIC_API_URL =
+    import.meta.env.VITE_TRAFFIC_API_URL || "http://localhost:8002/api/v1";
 
 // Create axios instances
 export const api = axios.create({
@@ -21,6 +23,12 @@ export const routingApi = axios.create({
     headers: {
         "Content-Type": "application/json",
     },
+});
+
+export const trafficApi = axios.create({
+    baseURL: TRAFFIC_API_URL,
+    timeout: 15000,
+    headers: { "Content-Type": "application/json" }
 });
 
 // Request interceptor for auth tokens
@@ -185,28 +193,54 @@ export const apiService = {
         deleteRoute: (routeId: string) => api.delete(`/routes/${routeId}`),
     },
 
-    // Traffic
+    // Traffic - Direct integration with traffic service (port 8002)
     traffic: {
         getCurrentTraffic: (location: {
             lat: number;
             lng: number;
             radius?: number;
         }) => api.get("/traffic/current", { params: location }),
-        getTrafficIncidents: () => api.get("/traffic/incidents"),
+
+        getTrafficIncidents: (params?: {
+            lat?: number;
+            lng?: number;
+            radius?: number;
+            status?: string[];
+            limit?: number;
+            offset?: number;
+        }) => trafficApi.get("/traffic/incidents/", { params }),
+
         reportIncident: (incident: {
-            type: string;
+            type: 'accident' | 'construction' | 'closure' | 'congestion' | 'weather' | 'hazard' | 'other';
+            severity: 'low' | 'medium' | 'high' | 'critical';
             location: { lat: number; lng: number };
             description: string;
-        }) => api.post("/traffic/incidents", incident),
-        updateIncident: (incidentId: string, status: string) =>
-            api.put(`/traffic/incidents/${incidentId}`, { status }),
-        getTrafficPredictions: (
-            location: { lat: number; lng: number },
-            timeRange?: string
-        ) =>
-            api.get("/traffic/predictions", {
-                params: { ...location, timeRange },
-            }),
+            address?: string;
+            affected_lanes?: string;
+            estimated_duration?: string;
+            reported_by?: string;
+        }) => trafficApi.post("/traffic/incidents/report", incident),
+
+        voteOnIncident: (incidentId: string, voteData: {
+            vote_type: 'confirm' | 'dispute';
+            user_id?: string;
+        }) => {
+            return trafficApi.put(`/traffic/incidents/${incidentId}/vote`, voteData);
+        },
+
+        updateIncident: (incidentId: string, statusData: {
+            status: 'active' | 'resolved' | 'verified' | 'disputed';
+            updated_by?: string;
+        }) => {
+            return trafficApi.put(`/traffic/incidents/${incidentId}/status`, statusData);
+        },
+
+        getRouteIncidents: (routeData: {
+            coordinates: { lat: number; lng: number }[];
+            buffer_km?: number;
+        }) => {
+            return trafficApi.post("/traffic/incidents/route-check", routeData);
+        },
     },
 
     // User Dashboard

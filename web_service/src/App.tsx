@@ -4,6 +4,7 @@ import Header from './components/Header';
 import HomePage from './components/pages/HomePage';
 import RoutePlanningPage from './components/pages/RoutePlanningPage';
 import NavigationPage from './components/pages/NavigationPage';
+import TrafficReportPage from './components/pages/TrafficReportPage';
 import LoginPage from './components/pages/LoginPage';
 import DashboardPage from './components/pages/DashboardPage';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -113,7 +114,7 @@ export default function App() {
               />
             }
           />
-          <Route path="/traffic" element={<RoutePlanningPage />} />
+          <Route path="/traffic" element={<TrafficReportPage />} />
           <Route path="/navigation" element={<NavigationPage />} />
           <Route
             path="/login"
