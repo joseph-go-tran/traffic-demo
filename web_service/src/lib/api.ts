@@ -28,7 +28,7 @@ export const routingApi = axios.create({
 export const trafficApi = axios.create({
     baseURL: TRAFFIC_API_URL,
     timeout: 15000,
-    headers: { "Content-Type": "application/json" }
+    headers: { "Content-Type": "application/json" },
 });
 
 // Request interceptor for auth tokens
@@ -184,6 +184,10 @@ export const apiService = {
 
         getRouteTypes: () => routingApi.get("/routes/route-types"),
 
+        // Location search/geocoding - Uses POST method as per routing service
+        searchLocation: (query: string) =>
+            routingApi.post("/routes/search", { query, radius: 50000 }),
+
         // Legacy endpoints (if you still need them for user data persistence)
         getRoute: (routeId: string) => api.get(`/routes/${routeId}`),
         getRoutes: () => api.get("/routes"),
@@ -211,8 +215,15 @@ export const apiService = {
         }) => trafficApi.get("/traffic/incidents/", { params }),
 
         reportIncident: (incident: {
-            type: 'accident' | 'construction' | 'closure' | 'congestion' | 'weather' | 'hazard' | 'other';
-            severity: 'low' | 'medium' | 'high' | 'critical';
+            type:
+                | "accident"
+                | "construction"
+                | "closure"
+                | "congestion"
+                | "weather"
+                | "hazard"
+                | "other";
+            severity: "low" | "medium" | "high" | "critical";
             location: { lat: number; lng: number };
             description: string;
             address?: string;
@@ -221,18 +232,30 @@ export const apiService = {
             reported_by?: string;
         }) => trafficApi.post("/traffic/incidents/report", incident),
 
-        voteOnIncident: (incidentId: string, voteData: {
-            vote_type: 'confirm' | 'dispute';
-            user_id?: string;
-        }) => {
-            return trafficApi.put(`/traffic/incidents/${incidentId}/vote`, voteData);
+        voteOnIncident: (
+            incidentId: string,
+            voteData: {
+                vote_type: "confirm" | "dispute";
+                user_id?: string;
+            }
+        ) => {
+            return trafficApi.put(
+                `/traffic/incidents/${incidentId}/vote`,
+                voteData
+            );
         },
 
-        updateIncident: (incidentId: string, statusData: {
-            status: 'active' | 'resolved' | 'verified' | 'disputed';
-            updated_by?: string;
-        }) => {
-            return trafficApi.put(`/traffic/incidents/${incidentId}/status`, statusData);
+        updateIncident: (
+            incidentId: string,
+            statusData: {
+                status: "active" | "resolved" | "verified" | "disputed";
+                updated_by?: string;
+            }
+        ) => {
+            return trafficApi.put(
+                `/traffic/incidents/${incidentId}/status`,
+                statusData
+            );
         },
 
         getRouteIncidents: (routeData: {
