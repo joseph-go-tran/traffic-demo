@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { AlertTriangle, MapPin, TrendingUp, Clock, CheckCircle, XCircle, Search } from 'lucide-react';
+import { AlertTriangle, MapPin, TrendingUp, Clock, CheckCircle, XCircle } from 'lucide-react';
 import TrafficReportModal from '../TrafficReportModal';
 import TrafficIncidentsList from '../TrafficIncidentsList';
+import LocationInput from '../LocationInput';
 import { useTrafficIncidents } from '../../hooks/useTrafficIncidents';
-import { apiService } from '../../lib/api';
 
 export default function TrafficReportPage() {
   const [showReportModal, setShowReportModal] = useState(false);
@@ -17,7 +17,6 @@ export default function TrafficReportPage() {
     lat: number;
     lng: number;
   } | null>(null);
-  const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
 
   // Traffic incidents management
@@ -50,89 +49,7 @@ export default function TrafficReportPage() {
     }
     // distance sorting would require calculating distance from user location
     return 0;
-  });  const handleLocationSearch = async () => {
-    if (!locationInput.trim()) {
-      setSearchError('Please enter a location or area');
-      return;
-    }
-
-    setIsSearching(true);
-    setSearchError(null);
-
-    try {
-      // STEP 1: Search and geocode the location
-      console.log('🔍 Searching for location:', locationInput);
-
-      const locationResponse = await apiService.routes.searchLocation(locationInput);
-
-      // Validate location response - routing service returns { results: [...] }
-      if (!locationResponse.data || !locationResponse.data.results || locationResponse.data.results.length === 0) {
-        setSearchError('Location not found. Please try a different search.');
-        setSearchedLocation(null);
-        return;
-      }
-
-      // Get the best result (first one)
-      const firstResult = locationResponse.data.results[0];
-      const location = {
-        name: firstResult.name || firstResult.address || locationInput,
-        lat: firstResult.coordinates.lat,
-        lng: firstResult.coordinates.lng
-      };
-
-      console.log('✅ Location found:', location);
-
-      // STEP 2: Set location state (this will trigger useTrafficIncidents hook)
-      setSearchedLocation(location);
-
-      // STEP 3: Immediately fetch incidents for this location
-      console.log('📍 Fetching incidents for location...');
-
-      try {
-        const incidentsResponse = await apiService.traffic.getTrafficIncidents({
-          lat: location.lat,
-          lng: location.lng,
-          radius: 25.0,
-          limit: 100
-        });
-
-        console.log('✅ Incidents fetched:', incidentsResponse.data);
-
-        // Trigger hook refresh to ensure latest data
-        await refreshIncidents();
-
-      } catch (incidentsError) {
-        console.warn('⚠️ Could not fetch incidents immediately, will use hook:', incidentsError);
-        // The hook will still fetch incidents, so this is not critical
-      }
-
-      setSearchError(null);
-
-    } catch (error: unknown) {
-      console.error('❌ Error searching location:', error);
-
-      // Detailed error handling
-      const err = error as { response?: { status: number; data?: { message?: string } }; request?: unknown };
-      if (err.response) {
-        const status = err.response.status;
-        if (status === 404) {
-          setSearchError('Location service not found. Please check if the routing service is running.');
-        } else if (status === 500) {
-          setSearchError('Server error. Please try again later.');
-        } else {
-          setSearchError(`Error ${status}: ${err.response.data?.message || 'Please try again.'}`);
-        }
-      } else if (err.request) {
-        setSearchError('Cannot connect to server. Please check your internet connection.');
-      } else {
-        setSearchError('Failed to search location. Please try again.');
-      }
-
-      setSearchedLocation(null);
-    } finally {
-      setIsSearching(false);
-    }
-  };
+  });
 
   const handleClearLocation = () => {
     setLocationInput('');
@@ -177,68 +94,45 @@ export default function TrafficReportPage() {
 
         {/* Location Search */}
         <div className="bg-white rounded-lg shadow-md p-4 mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Search Location or Area
-          </label>
-          <div className="flex space-x-2">
-            <div className="flex-1 relative">
-              <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <input
-                type="text"
-                value={locationInput}
-                onChange={(e) => setLocationInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleLocationSearch()}
-                placeholder="Enter city, address, or area (e.g., New York, Manhattan, Times Square)"
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2
-                         focus:ring-purple-600 focus:border-transparent"
-              />
-            </div>
-            <button
-              onClick={handleLocationSearch}
-              disabled={isSearching || !locationInput.trim()}
-              className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700
-                       transition-colors flex items-center space-x-2 disabled:opacity-50
-                       disabled:cursor-not-allowed"
-            >
-              {isSearching ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  <span>Searching...</span>
-                </>
-              ) : (
-                <>
-                  <Search className="h-4 w-4" />
-                  <span>Search</span>
-                </>
-              )}
-            </button>
-            {searchedLocation && (
+          <LocationInput
+            label="Search Location or Area"
+            value={locationInput}
+            onChange={(value, coordinates) => {
+              setLocationInput(value);
+              // If coordinates are provided (user selected from dropdown), auto-search
+              if (coordinates) {
+                setSearchedLocation({
+                  name: value,
+                  lat: coordinates.lat,
+                  lng: coordinates.lng
+                });
+                setSearchError(null);
+              }
+            }}
+            placeholder="Enter city, address, or area (e.g., New York, Manhattan, Times Square)"
+            icon={<MapPin className="h-5 w-5 text-gray-400" />}
+          />
+          {searchedLocation && (
+            <div className="mt-3 flex items-center justify-between">
+              <div className="flex items-center space-x-2 text-sm text-gray-600">
+                <MapPin className="h-4 w-4" />
+                <span>Showing incidents near: <strong>{searchedLocation.name}</strong></span>
+              </div>
               <button
                 onClick={handleClearLocation}
-                className="px-4 py-3 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200
-                         transition-colors"
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200
+                         transition-colors text-sm"
               >
                 Clear
               </button>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Search Error */}
           {searchError && (
             <div className="mt-2 flex items-center space-x-2 text-sm text-red-600">
               <AlertTriangle className="h-4 w-4" />
               <span>{searchError}</span>
-            </div>
-          )}
-
-          {/* Current Location Display */}
-          {searchedLocation && (
-            <div className="mt-3 flex items-center space-x-2 text-sm text-green-600 bg-green-50 px-4 py-2 rounded-lg">
-              <MapPin className="h-4 w-4" />
-              <span>
-                Showing incidents within 25km of <strong>{searchedLocation.name}</strong>
-                ({searchedLocation.lat.toFixed(4)}, {searchedLocation.lng.toFixed(4)})
-              </span>
             </div>
           )}
 

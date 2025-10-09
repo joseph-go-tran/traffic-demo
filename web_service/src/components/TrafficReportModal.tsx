@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { X, MapPin, AlertTriangle, Construction, Car, Clock, Camera, Send, Navigation } from 'lucide-react';
+import { X, MapPin, AlertTriangle, Construction, Car, Clock, Send, Navigation } from 'lucide-react';
 import { useGeolocation } from '../hooks/useGeolocation';
+import LocationInput from './LocationInput';
 import { apiService } from '../lib/api';
 
 interface TrafficReportModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialLocation?: { lat: number; lng: number };
-  onReportSubmitted?: (report: any) => void;
+  onReportSubmitted?: (report: TrafficReport) => void;
 }
 
 interface TrafficReport {
@@ -81,18 +82,14 @@ export default function TrafficReportModal({
     { id: 'critical', label: 'Critical', color: 'text-red-600 bg-red-100', description: 'Major disruption' }
   ];
 
-  const handleLocationSearch = async () => {
-    if (!locationInput.trim()) return;
-
-    try {
-      // In a real app, you would use the routing service search API
-      // For now, we'll just set the address
+  const handleLocationSelect = (address: string, coordinates?: { lat: number; lng: number }) => {
+    setLocationInput(address);
+    if (coordinates) {
       setReport(prev => ({
         ...prev,
-        address: locationInput
+        location: coordinates,
+        address: address
       }));
-    } catch (error) {
-      console.error('Error searching for location:', error);
     }
   };
 
@@ -183,7 +180,7 @@ export default function TrafficReportModal({
                     <button
                       key={type.id}
                       type="button"
-                      onClick={() => setReport(prev => ({ ...prev, type: type.id as any }))}
+                      onClick={() => setReport(prev => ({ ...prev, type: type.id as TrafficReport['type'] }))}
                       className={`p-3 rounded-lg border-2 flex items-center space-x-2 transition-colors ${
                         report.type === type.id
                           ? 'border-purple-500 bg-purple-50 text-purple-700'
@@ -229,46 +226,50 @@ export default function TrafficReportModal({
               </label>
 
               <div className="space-y-3">
-                <label className="flex items-center">
+                <label className="flex items-center mb-3">
                   <input
                     type="checkbox"
                     checked={useCurrentLocation}
-                    onChange={(e) => setUseCurrentLocation(e.target.checked)}
-                    className="mr-2"
+                    onChange={(e) => {
+                      setUseCurrentLocation(e.target.checked);
+                      if (!e.target.checked) {
+                        setLocationInput('');
+                      }
+                    }}
+                    className="mr-2 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
                   />
-                  <Navigation className="h-4 w-4 mr-1" />
+                  <Navigation className="h-4 w-4 mr-1 text-gray-600" />
                   <span className="text-sm text-gray-600">Use my current location</span>
                 </label>
 
                 {!useCurrentLocation && (
-                  <div className="flex space-x-2">
-                    <input
-                      type="text"
-                      value={locationInput}
-                      onChange={(e) => setLocationInput(e.target.value)}
-                      placeholder="Enter address or location"
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-purple-500 focus:border-purple-500"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleLocationSearch}
-                      className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
-                    >
-                      <MapPin className="h-4 w-4" />
-                    </button>
-                  </div>
+                  <LocationInput
+                    label=""
+                    value={locationInput}
+                    onChange={handleLocationSelect}
+                    placeholder="Search for address or location"
+                    icon={<MapPin className="h-5 w-5 text-gray-400" />}
+                  />
                 )}
 
                 {(useCurrentLocation && locationError) && (
-                  <p className="text-sm text-red-600">
-                    Location access denied. Please enter the address manually.
+                  <p className="text-sm text-red-600 bg-red-50 p-2 rounded">
+                    ⚠️ Location access denied. Please enter the address manually.
                   </p>
                 )}
 
                 {(report.location.lat !== 0 && report.location.lng !== 0) && (
-                  <p className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
-                    📍 {report.address || `${report.location.lat.toFixed(4)}, ${report.location.lng.toFixed(4)}`}
-                  </p>
+                  <div className="text-sm text-gray-700 bg-green-50 p-3 rounded-md border border-green-200">
+                    <div className="flex items-start space-x-2">
+                      <MapPin className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                      <div className="flex-1">
+                        <p className="font-medium text-green-800">Location set:</p>
+                        <p className="text-gray-700">
+                          {report.address || `${report.location.lat.toFixed(4)}, ${report.location.lng.toFixed(4)}`}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
