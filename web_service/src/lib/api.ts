@@ -1,8 +1,8 @@
 import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
 
 // Base API URLs - you can set these from environment variables
-const API_BASE_URL =
-    import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1";
+const USER_SERVICE_URL =
+    import.meta.env.VITE_USER_SERVICE_URL || "http://localhost:8000/api/v1";
 const ROUTING_API_URL =
     import.meta.env.VITE_ROUTING_API_URL || "http://localhost:8001/api/v1";
 const TRAFFIC_API_URL =
@@ -10,7 +10,7 @@ const TRAFFIC_API_URL =
 
 // Create axios instances
 export const api = axios.create({
-    baseURL: API_BASE_URL,
+    baseURL: USER_SERVICE_URL,
     timeout: 10000,
     headers: {
         "Content-Type": "application/json",
@@ -66,17 +66,16 @@ api.interceptors.response.use(
             const refreshToken = localStorage.getItem("refreshToken");
             if (refreshToken) {
                 try {
-                    const response = await api.post("/auth/refresh/", {
-                        refresh: refreshToken,
-                    });
+                    const response = await api.post(
+                        "/auth/token/refresh/",
+                        {
+                            refresh: refreshToken,
+                        }
+                    );
 
-                    const { access, refresh: newRefresh } = response.data;
+                    const { access } = response.data;
                     localStorage.setItem("accessToken", access);
                     localStorage.setItem("authToken", access); // backward compatibility
-
-                    if (newRefresh) {
-                        localStorage.setItem("refreshToken", newRefresh);
-                    }
 
                     // Retry the original request with the new token
                     if (originalRequest.headers) {
@@ -120,9 +119,22 @@ export const apiService = {
             password: string;
             firstName: string;
             lastName: string;
-        }) => api.post("/auth/register/", userData),
-        logout: () => api.post("/auth/logout/"),
-        refreshToken: () => api.post("/auth/refresh/"),
+        }) => api.post("/auth/register/", {
+            email: userData.email,
+            password: userData.password,
+            first_name: userData.firstName,
+            last_name: userData.lastName,
+        }),
+        logout: () => {
+            const refreshToken = localStorage.getItem("refreshToken");
+            return api.post("/auth/logout/", {
+                refresh: refreshToken,
+            });
+        },
+        refreshToken: (refreshToken: string) =>
+            api.post("/auth/token/refresh/", {
+                refresh: refreshToken,
+            }),
     },
 
     // Routes (Using TomTom API via routing service)

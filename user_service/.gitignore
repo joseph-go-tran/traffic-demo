@@ -48,4 +48,8 @@ dump.rdb
 static_root
 static
 
+# JWT RSA Keys - DO NOT COMMIT
+keys/
+*.pem
+
 .DS_Store

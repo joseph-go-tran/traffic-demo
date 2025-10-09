@@ -1,9 +1,11 @@
 // Token management utilities
+import { decodeJWT, getUserFromToken, JWTPayload } from "./jwtUtils";
 
 export interface TokenInfo {
     access: string | null;
     refresh: string | null;
     isAuthenticated: boolean;
+    user?: JWTPayload | null;
 }
 
 /**
@@ -15,10 +17,13 @@ export const getTokenInfo = (): TokenInfo => {
         localStorage.getItem("authToken");
     const refresh = localStorage.getItem("refreshToken");
 
+    const user = access ? getUserFromToken(access) : null;
+
     return {
         access,
         refresh,
         isAuthenticated: !!access,
+        user,
     };
 };
 
@@ -70,13 +75,8 @@ export const getRefreshToken = (): string | null => {
  * Check if a JWT token is expired
  */
 export const isTokenExpired = (token: string): boolean => {
-    try {
-        const payload = JSON.parse(atob(token.split(".")[1]));
-        const currentTime = Math.floor(Date.now() / 1000);
-        return payload.exp < currentTime;
-    } catch (error) {
-        return true; // If we can't decode it, consider it expired
-    }
+    const decoded = decodeJWT(token);
+    return decoded.isExpired;
 };
 
 /**

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Lock, Eye, EyeOff, MapPin, Loader2 } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, MapPin, Loader2, Check } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useLogin, useRegister } from '../../hooks/useAuth';
 
@@ -28,8 +28,33 @@ export default function LoginPage({ onLogin, onRegister }: LoginPageProps) {
     lastName: ''
   });
 
+  const [localErrors, setLocalErrors] = useState<Record<string, string>>({});
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Clear local errors
+    setLocalErrors({});
+
+    // Validate password confirmation for registration
+    if (!isLogin) {
+      if (!formData.password) {
+        setLocalErrors({ password: 'Password is required' });
+        return;
+      }
+      if (!formData.confirmPassword) {
+        setLocalErrors({ confirmPassword: 'Please confirm your password' });
+        return;
+      }
+      if (formData.password !== formData.confirmPassword) {
+        setLocalErrors({ confirmPassword: 'Passwords do not match' });
+        return;
+      }
+      if (formData.password.length < 8) {
+        setLocalErrors({ password: 'Password must be at least 8 characters long' });
+        return;
+      }
+    }
 
     try {
       if (isLogin) {
@@ -59,15 +84,139 @@ export default function LoginPage({ onLogin, onRegister }: LoginPageProps) {
   const error = loginMutation.error || registerMutation.error;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [name]: value
     });
+
+    // Clear local error for the field being edited
+    if (localErrors[name]) {
+      setLocalErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+
+    // Real-time validation for confirm password
+    if (name === 'confirmPassword' && value && formData.password) {
+      if (value !== formData.password) {
+        setLocalErrors(prev => ({ ...prev, confirmPassword: 'Passwords do not match' }));
+      } else {
+        setLocalErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors.confirmPassword;
+          return newErrors;
+        });
+      }
+    }
+
+    // Also check if password is being changed and confirm password exists
+    if (name === 'password' && formData.confirmPassword) {
+      if (value !== formData.confirmPassword) {
+        setLocalErrors(prev => ({ ...prev, confirmPassword: 'Passwords do not match' }));
+      } else {
+        setLocalErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors.confirmPassword;
+          return newErrors;
+        });
+      }
+    }
+  };
+
+  // Helper function to extract error messages from API response
+  const getErrorMessage = (err: unknown): string[] => {
+    if (!err) return [];
+
+    const error = err as { response?: { data?: Record<string, unknown> } };
+    const response = error?.response?.data;
+    const messages: string[] = [];
+
+    if (typeof response === 'string') {
+      messages.push(response);
+    } else if (response && typeof response === 'object') {
+      // Check for detail field (general error - no field prefix)
+      if ('detail' in response && typeof response.detail === 'string') {
+        messages.push(response.detail);
+      }
+      // Check for message field (general error - no field prefix)
+      else if ('message' in response && typeof response.message === 'string') {
+        messages.push(response.message);
+      }
+      // Field-specific errors (show just the message without field name)
+      else {
+        Object.keys(response).forEach(field => {
+          const fieldErrors = response[field];
+          if (Array.isArray(fieldErrors)) {
+            fieldErrors.forEach(msg => {
+              // Show only the error message without field name prefix
+              messages.push(String(msg));
+            });
+          } else if (typeof fieldErrors === 'string') {
+            // Show only the error message without field name prefix
+            messages.push(fieldErrors);
+          }
+        });
+      }
+    }
+
+    // Fallback message if no specific error found
+    if (messages.length === 0) {
+      messages.push(isLogin ? 'Login failed. Please check your credentials.' : 'Registration failed. Please try again.');
+    }
+
+    return messages;
+  };
+
+  const errorMessages = getErrorMessage(error);
+
+  // Check if passwords match (for visual feedback)
+  const passwordsMatch = !isLogin &&
+    formData.password &&
+    formData.confirmPassword &&
+    formData.password === formData.confirmPassword &&
+    !localErrors.confirmPassword;
+
+  // Helper to check if a specific field has an error
+  const hasFieldError = (fieldName: string): boolean => {
+    // Check local errors first
+    if (localErrors[fieldName]) return true;
+
+    // Check API errors
+    if (!error) return false;
+    const err = error as { response?: { data?: Record<string, unknown> } };
+    const response = err?.response?.data;
+    if (!response) return false;
+    return fieldName in response;
+  };
+
+  // Get error message for specific field
+  const getFieldError = (fieldName: string): string | null => {
+    // Check local errors first
+    if (localErrors[fieldName]) return localErrors[fieldName];
+
+    // Check API errors
+    if (!error) return null;
+    const err = error as { response?: { data?: Record<string, unknown> } };
+    const response = err?.response?.data;
+    if (!response) return null;
+
+    const fieldError = response[fieldName];
+
+    if (Array.isArray(fieldError)) {
+      return String(fieldError[0]);
+    } else if (typeof fieldError === 'string') {
+      return fieldError;
+    }
+    return null;
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center px-4">
-      <div className="max-w-md w-full">
+      <div className="max-w-md w-full my-5">
         {/* Logo and Brand */}
         <div className="text-center mb-8">
           <div className="bg-white p-3 rounded-xl inline-block mb-4">
@@ -104,9 +253,16 @@ export default function LoginPage({ onLogin, onRegister }: LoginPageProps) {
                     required
                     value={formData.firstName}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent ${
+                      hasFieldError('first_name')
+                        ? 'border-red-300 focus:ring-red-600'
+                        : 'border-gray-300 focus:ring-purple-600'
+                    }`}
                     placeholder="John"
                   />
+                  {hasFieldError('first_name') && (
+                    <p className="mt-1 text-sm text-red-600">{getFieldError('first_name')}</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -118,9 +274,16 @@ export default function LoginPage({ onLogin, onRegister }: LoginPageProps) {
                     required
                     value={formData.lastName}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent ${
+                      hasFieldError('last_name')
+                        ? 'border-red-300 focus:ring-red-600'
+                        : 'border-gray-300 focus:ring-purple-600'
+                    }`}
                     placeholder="Doe"
                   />
+                  {hasFieldError('last_name') && (
+                    <p className="mt-1 text-sm text-red-600">{getFieldError('last_name')}</p>
+                  )}
                 </div>
               </div>
             )}
@@ -130,17 +293,24 @@ export default function LoginPage({ onLogin, onRegister }: LoginPageProps) {
                 Email Address
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Mail className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 ${hasFieldError('email') ? 'text-red-400' : 'text-gray-400'}`} />
                 <input
                   type="email"
                   name="email"
                   required
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                  className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:border-transparent ${
+                    hasFieldError('email')
+                      ? 'border-red-300 focus:ring-red-600'
+                      : 'border-gray-300 focus:ring-purple-600'
+                  }`}
                   placeholder="you@example.com"
                 />
               </div>
+              {hasFieldError('email') && (
+                <p className="mt-1 text-sm text-red-600">{getFieldError('email')}</p>
+              )}
             </div>
 
             <div>
@@ -148,14 +318,18 @@ export default function LoginPage({ onLogin, onRegister }: LoginPageProps) {
                 Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Lock className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 ${hasFieldError('password') ? 'text-red-400' : 'text-gray-400'}`} />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   name="password"
                   required
                   value={formData.password}
                   onChange={handleInputChange}
-                  className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                  className={`w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:border-transparent ${
+                    hasFieldError('password')
+                      ? 'border-red-300 focus:ring-red-600'
+                      : 'border-gray-300 focus:ring-purple-600'
+                  }`}
                   placeholder="••••••••"
                 />
                 <button
@@ -166,6 +340,9 @@ export default function LoginPage({ onLogin, onRegister }: LoginPageProps) {
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
+              {hasFieldError('password') && (
+                <p className="mt-1 text-sm text-red-600">{getFieldError('password')}</p>
+              )}
             </div>
 
             {!isLogin && (
@@ -174,17 +351,35 @@ export default function LoginPage({ onLogin, onRegister }: LoginPageProps) {
                   Confirm Password
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Lock className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 ${
+                    hasFieldError('confirmPassword') ? 'text-red-400' :
+                    passwordsMatch ? 'text-green-400' : 'text-gray-400'
+                  }`} />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     name="confirmPassword"
                     required
                     value={formData.confirmPassword}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+                    className={`w-full pl-10 py-3 border rounded-lg focus:ring-2 focus:border-transparent ${
+                      hasFieldError('confirmPassword')
+                        ? 'border-red-300 focus:ring-red-600 pr-4'
+                        : passwordsMatch
+                        ? 'border-green-300 focus:ring-green-600 pr-10'
+                        : 'border-gray-300 focus:ring-purple-600 pr-4'
+                    }`}
                     placeholder="••••••••"
                   />
+                  {passwordsMatch && (
+                    <Check className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-green-500" />
+                  )}
                 </div>
+                {hasFieldError('confirmPassword') && (
+                  <p className="mt-1 text-sm text-red-600">{getFieldError('confirmPassword')}</p>
+                )}
+                {passwordsMatch && (
+                  <p className="mt-1 text-sm text-green-600">Passwords match!</p>
+                )}
               </div>
             )}
 
@@ -200,12 +395,23 @@ export default function LoginPage({ onLogin, onRegister }: LoginPageProps) {
               </div>
             )}
 
-            {/* Error Display */}
-            {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
-                <p className="text-red-600 text-sm">
-                  {error?.response?.data?.message || 'An error occurred during authentication'}
-                </p>
+            {/* Error Display - Show API errors only for login */}
+            {isLogin && error && errorMessages.length > 0 && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3 flex-1">
+                    <div className="text-sm text-red-600">
+                      {errorMessages.map((msg, index) => (
+                        <p key={index} className={index > 0 ? 'mt-1' : ''}>{msg}</p>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -229,7 +435,12 @@ export default function LoginPage({ onLogin, onRegister }: LoginPageProps) {
             <p className="text-gray-600">
               {isLogin ? "Don't have an account? " : "Already have an account? "}
               <button
-                onClick={() => setIsLogin(!isLogin)}
+                onClick={() => {
+                  setIsLogin(!isLogin);
+                  setLocalErrors({});
+                  loginMutation.reset();
+                  registerMutation.reset();
+                }}
                 className="text-purple-600 hover:text-purple-700 font-medium"
               >
                 {isLogin ? 'Sign up' : 'Sign in'}

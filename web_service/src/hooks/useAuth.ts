@@ -18,6 +18,12 @@ export const useLogin = () => {
             queryClient.invalidateQueries({ queryKey: queryKeys.auth });
             queryClient.invalidateQueries({ queryKey: queryKeys.user });
         },
+        onError: (error: any) => {
+            console.error(
+                "Login error:",
+                error?.response?.data || error.message
+            );
+        },
     });
 };
 
@@ -34,6 +40,12 @@ export const useRegister = () => {
             // Invalidate auth-related queries
             queryClient.invalidateQueries({ queryKey: queryKeys.auth });
             queryClient.invalidateQueries({ queryKey: queryKeys.user });
+        },
+        onError: (error: any) => {
+            console.error(
+                "Registration error:",
+                error?.response?.data || error.message
+            );
         },
     });
 };
@@ -56,14 +68,26 @@ export const useRefreshToken = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: apiService.auth.refreshToken,
+        mutationFn: (refreshToken: string) =>
+            apiService.auth.refreshToken(refreshToken),
         onSuccess: (data) => {
-            // Update tokens using utility
-            const { access, refresh } = data.data;
-            setTokens(access, refresh);
+            // Update access token, keep existing refresh token
+            const { access } = data.data;
+            const currentRefresh = localStorage.getItem("refreshToken");
+            if (currentRefresh) {
+                setTokens(access, currentRefresh);
+            }
 
             // Invalidate auth-related queries
             queryClient.invalidateQueries({ queryKey: queryKeys.auth });
+        },
+        onError: (error: any) => {
+            console.error(
+                "Token refresh error:",
+                error?.response?.data || error.message
+            );
+            // If refresh fails, clear tokens and redirect to login
+            clearTokens();
         },
     });
 };

@@ -66,6 +66,31 @@ INSTALLED_APPS = [
     "authentication",
 ]
 
+# JWT RSA Keys Configuration
+keys_dir = os.path.join(os.path.dirname(BASE_DIR), "keys")
+JWT_PRIVATE_KEY_PATH = os.path.join(keys_dir, "jwt_private_key.pem")
+JWT_PUBLIC_KEY_PATH = os.path.join(keys_dir, "jwt_public_key.pem")
+
+# Load RSA keys if they exist
+try:
+    with open(JWT_PRIVATE_KEY_PATH, "r") as f:
+        JWT_PRIVATE_KEY = f.read()
+except FileNotFoundError:
+    JWT_PRIVATE_KEY = None
+    print(
+        "WARNING: JWT private key not found. Run generate_rsa_keys.py to create keys."
+    )
+
+try:
+    with open(JWT_PUBLIC_KEY_PATH, "r") as f:
+        JWT_PUBLIC_KEY = f.read()
+except FileNotFoundError:
+    JWT_PUBLIC_KEY = None
+    print(
+        "WARNING: JWT public key not found. Run generate_rsa_keys.py to create keys."
+    )
+
+# Simple JWT Configuration with RSA256
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(
         minutes=int(os.getenv("ACCESS_TOKEN_LIFETIME", 5))
@@ -73,6 +98,26 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(
         days=int(os.getenv("REFRESH_TOKEN_LIFETIME", 1))
     ),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "UPDATE_LAST_LOGIN": True,
+    # Use RS256 algorithm (RSA with SHA-256)
+    "ALGORITHM": "RS256",
+    "SIGNING_KEY": JWT_PRIVATE_KEY,
+    "VERIFYING_KEY": JWT_PUBLIC_KEY,
+    # Token claims
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "AUTH_HEADER_NAME": "HTTP_AUTHORIZATION",
+    "USER_ID_FIELD": "id",
+    "USER_ID_CLAIM": "user_id",
+    "USER_AUTHENTICATION_RULE": "rest_framework_simplejwt.authentication.default_user_authentication_rule",
+    # Token type
+    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
+    "TOKEN_TYPE_CLAIM": "token_type",
+    # Sliding tokens (optional)
+    "JTI_CLAIM": "jti",
+    # Token obtain serializer
+    "TOKEN_OBTAIN_SERIALIZER": "authentication.serializers.login_serializer.EmailTokenObtainPairSerializer",
 }
 
 SITE_ID = 1

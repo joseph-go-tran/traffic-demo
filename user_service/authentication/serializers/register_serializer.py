@@ -1,6 +1,5 @@
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
-from rest_framework.validators import UniqueValidator
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from authentication.models import Customer
@@ -15,7 +14,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     email = serializers.EmailField(
         required=True,
-        validators=[UniqueValidator(queryset=Customer.objects.all())],
+        validators=[],  # We'll handle validation in validate_email method
     )
 
     password = serializers.CharField(
@@ -46,6 +45,16 @@ class RegisterSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     "This username is already taken."
                 )
+        return value
+
+    def validate_email(self, value):
+        """
+        Ensure email is unique
+        """
+        if Customer.objects.filter(email=value).exists():
+            raise serializers.ValidationError(
+                "This email is already registered."
+            )
         return value
 
     def create(self, validated_data):
