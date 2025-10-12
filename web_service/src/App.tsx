@@ -8,13 +8,15 @@ import TrafficReportPage from './components/pages/TrafficReportPage';
 import LoginPage from './components/pages/LoginPage';
 import DashboardPage from './components/pages/DashboardPage';
 import ProtectedRoute from './components/ProtectedRoute';
-import { isAuthenticated as checkAuth, hasValidAuthentication, clearTokens } from './lib/tokenUtils';
+import NotificationPanel from './components/NotificationPanel';
+import NotificationToast from './components/NotificationToast';
+import { hasValidAuthentication, clearTokens, isAuthenticated as checkAuth } from './lib/tokenUtils';
 
 export default function App() {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showNotificationPanel, setShowNotificationPanel] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [notificationCount] = useState(2);
 
   // Check authentication status on app initialization
   useEffect(() => {
@@ -72,8 +74,7 @@ export default function App() {
   };
 
   const handleNotificationClick = () => {
-    // Handle notification click
-    console.log('Notifications clicked');
+    setShowNotificationPanel(!showNotificationPanel);
   };
 
   // Show loading spinner while checking authentication
@@ -84,18 +85,21 @@ export default function App() {
       </div>
     );
   }
-
   return (
     <div className="min-h-screen bg-gray-50">
       <Header
         isAuthenticated={isAuthenticated}
         onLoginClick={handleLoginClick}
         onNotificationClick={handleNotificationClick}
-        notificationCount={notificationCount}
       />
+
+      {/* Notification Components */}
+      {showNotificationPanel && <NotificationPanel />}
+      <NotificationToast />
 
       <main>
         <Routes>
+          <Route path="/" element={<HomePage />} />
           <Route path="/" element={<HomePage />} />
           <Route
             path="/routes"

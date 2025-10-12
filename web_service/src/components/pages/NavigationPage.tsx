@@ -6,6 +6,7 @@ import TrafficReportModal from '../TrafficReportModal';
 import TrafficIncidentsList from '../TrafficIncidentsList';
 import { useTrafficIncidents } from '../../hooks/useTrafficIncidents';
 import { useGeolocation } from '../../hooks/useGeolocation';
+import { useNotifications } from '../../contexts/NotificationContext';
 
 interface NavigationPageProps {
   routeId?: string;
@@ -16,6 +17,28 @@ export default function NavigationPage({ routeId }: NavigationPageProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [timeRemaining, setTimeRemaining] = useState(27 * 60); // 27 minutes in seconds
   const [showReportModal, setShowReportModal] = useState(false);
+
+  // Connect to WebSocket for real-time navigation updates
+  const { connect, disconnect, subscribe } = useNotifications();
+
+  // Connect WebSocket when navigation starts
+  useEffect(() => {
+    console.log('Navigation started - connecting to notification service');
+    connect();
+
+    // Use a timeout to subscribe after connection is established
+    const subscribeTimer = setTimeout(() => {
+      subscribe(undefined, ['traffic-alerts', 'route-updates', 'navigation']);
+    }, 500);
+
+    // Cleanup: disconnect when navigation ends
+    return () => {
+      clearTimeout(subscribeTimer);
+      console.log('Navigation ended - disconnecting from notification service');
+      disconnect();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty deps - only run on mount/unmount
 
   // Get user's current location
   const { latitude, longitude } = useGeolocation({

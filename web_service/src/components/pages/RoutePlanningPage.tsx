@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, MapPin, Clock, Repeat } from 'lucide-react';
 import NavigationMap from '../NavigationMap';
 import RouteCard from '../RouteCard';
 import LocationInput from '../LocationInput';
 import { useCalculateEnhancedRoute, RouteRequest, Coordinates } from '../../hooks/useRouting';
+import { useNotifications } from '../../contexts/NotificationContext';
 
 interface RoutePlanningPageProps {
   onNavigate?: (routeId: string, routeData?: any) => void;
@@ -18,6 +19,28 @@ export default function RoutePlanningPage({ onNavigate }: RoutePlanningPageProps
   const [routes, setRoutes] = useState<any[]>([]);
 
   const calculateRouteMutation = useCalculateEnhancedRoute();
+
+  // Connect to WebSocket for real-time route updates
+  const { connect, disconnect, isConnected, subscribe } = useNotifications();
+
+  // Connect WebSocket when route planning page loads
+  useEffect(() => {
+    console.log('Route planning started - connecting to notification service');
+    connect();
+
+    // Use a timeout to subscribe after connection is established
+    const subscribeTimer = setTimeout(() => {
+      subscribe(undefined, ['traffic-alerts', 'route-updates']);
+    }, 500);
+
+    // Cleanup: disconnect when leaving route planning page
+    return () => {
+      clearTimeout(subscribeTimer);
+      console.log('Route planning ended - disconnecting from notification service');
+      disconnect();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty deps - only run on mount/unmount
 
   const mockRoutes = [
     {

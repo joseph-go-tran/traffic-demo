@@ -1,6 +1,6 @@
 import { MapPin, Menu, User, Bell, LogOut } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
-import { useNotificationCount } from '../hooks/useNotifications';
+import { useNotifications } from '../contexts/NotificationContext';
 
 interface HeaderProps {
   isAuthenticated: boolean;
@@ -16,10 +16,10 @@ export default function Header({
   notificationCount
 }: HeaderProps) {
   const location = useLocation();
+  const { unreadCount, isConnected, isConnecting } = useNotifications();
 
-  // Use API hook for notification count, fallback to prop
-  const { data: apiNotificationCount } = useNotificationCount();
-  const displayCount = apiNotificationCount ?? notificationCount ?? 0;
+  // Use WebSocket notification count, fallback to prop
+  const displayCount = unreadCount ?? notificationCount ?? 0;
 
   const navItems = [
     { path: '/', label: 'Home', key: 'home' },
@@ -64,13 +64,24 @@ export default function Header({
               <button
                 onClick={onNotificationClick}
                 className="relative p-2 text-gray-600 hover:text-purple-600 transition-colors duration-200"
+                title={isConnected ? 'Notifications (Live)' : isConnecting ? 'Connecting...' : 'Notifications (Offline)'}
               >
                 <Bell className="h-5 w-5" />
-                {notificationCount > 0 && (
+                {displayCount > 0 && (
                   <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    {notificationCount}
+                    {displayCount}
                   </span>
                 )}
+                {/* Connection status indicator */}
+                <span
+                  className={`absolute bottom-0 right-0 w-2 h-2 rounded-full ${
+                    isConnected
+                      ? 'bg-green-500'
+                      : isConnecting
+                      ? 'bg-yellow-500 animate-pulse'
+                      : 'bg-gray-400'
+                  }`}
+                />
               </button>
             )}
 
