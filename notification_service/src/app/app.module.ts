@@ -10,6 +10,7 @@ import { TokenModule } from '@/api/token/token.module';
 import { AdminModule } from '@/api/admin/admin.module';
 import { DatabaseModule } from '@/database/database.module';
 import { CustomerModule } from '@/api/customer/customer.module';
+import { NotificationModule } from '@/api/notification/notification.module';
 
 const EnvSchema = {
   PORT: Joi.number(),
@@ -35,6 +36,7 @@ const EnvSchema = {
     AdminModule,
     CustomerModule,
     DatabaseModule,
+    NotificationModule,
   ],
   controllers: [AppController],
   providers: [],
