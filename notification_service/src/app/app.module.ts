@@ -11,7 +11,7 @@ import { AdminModule } from '@/api/admin/admin.module';
 import { DatabaseModule } from '@/database/database.module';
 import { CustomerModule } from '@/api/customer/customer.module';
 import { NotificationModule } from '@/api/notification/notification.module';
-
+import { KafkaModule } from '@/kafka/kafka.module';
 const EnvSchema = {
   PORT: Joi.number(),
   NODE_ENV: Joi.string(),
@@ -23,6 +23,7 @@ const EnvSchema = {
   DB_PASSWORD: Joi.string().required(),
   JWT_SECRET: Joi.string().required(),
   JWT_REFRESH_SECRET: Joi.string().required(),
+  KAFKA_BROKER: Joi.string(),
 };
 
 @Module({
@@ -37,6 +38,7 @@ const EnvSchema = {
     CustomerModule,
     DatabaseModule,
     NotificationModule,
+    KafkaModule,
   ],
   controllers: [AppController],
   providers: [],

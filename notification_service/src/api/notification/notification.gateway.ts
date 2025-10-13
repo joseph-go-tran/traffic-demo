@@ -42,7 +42,9 @@ export class NotificationGateway
   handleConnection(client: Socket) {
     const clientId = client.id;
     this.connectedClients.set(clientId, client);
-    this.logger.log(`Client connected: ${clientId} - Total clients: ${this.connectedClients.size}`);
+    this.logger.log(
+      `Client connected: ${clientId} - Total clients: ${this.connectedClients.size}`,
+    );
 
     // Send welcome notification
     client.emit('notification', {
@@ -56,7 +58,9 @@ export class NotificationGateway
   handleDisconnect(client: Socket) {
     const clientId = client.id;
     this.connectedClients.delete(clientId);
-    this.logger.log(`Client disconnected: ${clientId} - Total clients: ${this.connectedClients.size}`);
+    this.logger.log(
+      `Client disconnected: ${clientId} - Total clients: ${this.connectedClients.size}`,
+    );
   }
 
   @SubscribeMessage('subscribe')
@@ -100,7 +104,9 @@ export class NotificationGateway
 
     channels.forEach((channel) => {
       client.leave(channel);
-      this.logger.log(`Client ${client.id} unsubscribed from channel:${channel}`);
+      this.logger.log(
+        `Client ${client.id} unsubscribed from channel:${channel}`,
+      );
     });
 
     return {
@@ -142,7 +148,9 @@ export class NotificationGateway
       timestamp: payload.timestamp || Date.now(),
     };
     this.server.to(channel).emit('notification', notification);
-    this.logger.log(`Sent notification to channel ${channel}: ${payload.title}`);
+    this.logger.log(
+      `Sent notification to channel ${channel}: ${payload.title}`,
+    );
   }
 
   sendNotificationToClient(clientId: string, payload: NotificationPayload) {
@@ -151,7 +159,9 @@ export class NotificationGateway
       timestamp: payload.timestamp || Date.now(),
     };
     this.server.to(clientId).emit('notification', notification);
-    this.logger.log(`Sent notification to client ${clientId}: ${payload.title}`);
+    this.logger.log(
+      `Sent notification to client ${clientId}: ${payload.title}`,
+    );
   }
 
   getConnectedClientsCount(): number {

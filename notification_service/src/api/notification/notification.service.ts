@@ -24,7 +24,10 @@ export class NotificationService {
 
   sendToChannel(channel: string, notification: SendNotificationDto) {
     this.notificationGateway.sendNotificationToChannel(channel, notification);
-    return { success: true, message: `Notification sent to channel ${channel}` };
+    return {
+      success: true,
+      message: `Notification sent to channel ${channel}`,
+    };
   }
 
   getStats() {

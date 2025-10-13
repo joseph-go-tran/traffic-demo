@@ -1,7 +1,11 @@
+import logging
+from datetime import datetime
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
+
+from app.kafka.producer import kafka_producer
 
 from ...database import get_db
 from ..models import TrafficIncident as TrafficIncidentModel
@@ -16,6 +20,7 @@ from ..schemas.traffic_schemas import (
 )
 from ..services.traffic_incident_service import TrafficIncidentService
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/traffic/incidents", tags=["traffic-incidents"])
 
 
@@ -64,6 +69,37 @@ async def report_incident(
         service = TrafficIncidentService(db)
         db_incident = service.create_incident(incident_data)
         incident_schema = convert_db_to_schema(db_incident)
+
+        # Publish traffic report to Kafka
+        try:
+            kafka_message = {
+                "reportId": str(db_incident.id),
+                "incidentType": db_incident.type,
+                "severity": db_incident.severity,
+                "location": {
+                    "lat": db_incident.latitude,
+                    "lng": db_incident.longitude,
+                    "address": db_incident.address,
+                },
+                "description": db_incident.description,
+                "reporter": {
+                    "userId": db_incident.reported_by,
+                    "username": db_incident.reported_by,
+                },
+                "timestamp": datetime.utcnow().isoformat(),
+                "affectedUsers": [],
+            }
+
+            kafka_success = kafka_producer.send_traffic_report(kafka_message)
+            if kafka_success:
+                logger.info(f"Traffic report sent to Kafka: {db_incident.id}")
+            else:
+                logger.warning(
+                    f"Failed to send traffic report to Kafka: {db_incident.id}"
+                )
+        except Exception as kafka_error:
+            # Log but don't fail the request if Kafka fails
+            logger.error(f"Kafka publishing error: {kafka_error}")
 
         return TrafficIncidentResponse(
             message="Traffic incident reported successfully",
