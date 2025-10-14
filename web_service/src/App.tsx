@@ -94,7 +94,9 @@ export default function App() {
       />
 
       {/* Notification Components */}
-      {showNotificationPanel && <NotificationPanel />}
+      {showNotificationPanel && (
+        <NotificationPanel onClose={() => setShowNotificationPanel(false)} />
+      )}
       <NotificationToast />
 
       <main>

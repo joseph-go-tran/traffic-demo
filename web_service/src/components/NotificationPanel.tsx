@@ -1,7 +1,11 @@
 import { useNotifications } from '../contexts/NotificationContext';
 import { Bell, X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
 
-export default function NotificationPanel() {
+interface NotificationPanelProps {
+  onClose?: () => void;
+}
+
+export default function NotificationPanel({ onClose }: NotificationPanelProps) {
   const {
     notifications,
     unreadCount,
@@ -55,7 +59,7 @@ export default function NotificationPanel() {
   };
 
   return (
-    <div className="fixed right-4 top-20 w-96 max-h-[calc(100vh-120px)] bg-white rounded-lg shadow-xl overflow-hidden z-50 border border-gray-200">
+    <div className="fixed right-4 top-20 w-96 max-h-[calc(100vh-120px)] bg-white rounded-lg shadow-xl overflow-hidden z-[1000] border border-gray-200">
       {/* Header */}
       <div className="bg-gradient-to-r from-purple-600 to-blue-600 text-white p-4">
         <div className="flex items-center justify-between">
@@ -90,6 +94,16 @@ export default function NotificationPanel() {
                 className="text-xs hover:bg-white/20 px-2 py-1 rounded"
               >
                 Clear All
+              </button>
+            )}
+            {/* Close Button */}
+            {onClose && (
+              <button
+                onClick={onClose}
+                className="hover:bg-white/20 p-1 rounded"
+                title="Close"
+              >
+                <X className="h-5 w-5" />
               </button>
             )}
           </div>
