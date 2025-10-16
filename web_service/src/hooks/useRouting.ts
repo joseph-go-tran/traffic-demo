@@ -182,6 +182,82 @@ export const useCalculateEnhancedRoute = () => {
     });
 };
 
+/**
+ * Hook to get user's routes from database
+ */
+export const useGetUserRoutes = (params: {
+    user_id: number;
+    limit?: number;
+    offset?: number;
+    status?: "active" | "completed" | "cancelled";
+}) => {
+    return useQuery({
+        queryKey: ["userRoutes", params.user_id, params.status, params.offset],
+        queryFn: () => apiService.routes.getUserRoutes(params),
+        enabled: !!params.user_id,
+        select: (data) => data.data,
+    });
+};
+
+/**
+ * Hook to get recent routes from database
+ */
+export const useGetRecentRoutesFromDB = (params?: {
+    limit?: number;
+    user_id?: number;
+}) => {
+    return useQuery({
+        queryKey: ["recentRoutes", params?.user_id, params?.limit],
+        queryFn: () => apiService.routes.getRecentRoutes(params),
+        select: (data) => data.data,
+    });
+};
+
+/**
+ * Hook to get detailed route information from database
+ */
+export const useGetRouteDetails = (
+    routeId: string,
+    enabled: boolean = true
+) => {
+    return useQuery({
+        queryKey: ["routeDetails", routeId],
+        queryFn: () => apiService.routes.getRouteDetails(routeId),
+        enabled: enabled && !!routeId,
+        select: (data) => data.data,
+    });
+};
+
+/**
+ * Hook to update route status
+ */
+export const useUpdateRouteStatus = () => {
+    return useMutation({
+        mutationFn: ({
+            routeId,
+            status,
+        }: {
+            routeId: string;
+            status: "active" | "completed" | "cancelled";
+        }) => apiService.routes.updateRouteStatus(routeId, status),
+        onError: (error) => {
+            console.error("Update route status error:", error);
+        },
+    });
+};
+
+/**
+ * Hook to delete a route from database
+ */
+export const useDeleteRouteFromDB = () => {
+    return useMutation({
+        mutationFn: (routeId: string) => apiService.routes.deleteRoute(routeId),
+        onError: (error) => {
+            console.error("Delete route error:", error);
+        },
+    });
+};
+
 // Utility functions for formatting
 
 /**

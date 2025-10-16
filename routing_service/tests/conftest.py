@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from app.api.v1.models import Base
+from app.api.v1.models.route_models import Base
 from app.api.v1.routes import users
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

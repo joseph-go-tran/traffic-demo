@@ -195,7 +195,7 @@ export default function RoutePlanningPage({ onNavigate }: RoutePlanningPageProps
   };
 
   // Use real routes data or fallback to mock data
-  const displayRoutes = routes.length > 0 ? routes : mockRoutes;
+  const displayRoutes = routes.length > 0 ? routes : [];
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

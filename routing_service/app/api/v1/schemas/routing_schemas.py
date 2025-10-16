@@ -39,6 +39,9 @@ class RouteRequestSchema(BaseModel):
     options: Optional[RouteOptionsSchema] = Field(
         None, description="Route calculation options"
     )
+    user_id: Optional[int] = Field(
+        None, description="Optional user ID to associate route with user"
+    )
 
 
 class RouteInstructionSchema(BaseModel):

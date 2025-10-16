@@ -66,12 +66,9 @@ api.interceptors.response.use(
             const refreshToken = localStorage.getItem("refreshToken");
             if (refreshToken) {
                 try {
-                    const response = await api.post(
-                        "/auth/token/refresh/",
-                        {
-                            refresh: refreshToken,
-                        }
-                    );
+                    const response = await api.post("/auth/token/refresh/", {
+                        refresh: refreshToken,
+                    });
 
                     const { access } = response.data;
                     localStorage.setItem("accessToken", access);
@@ -119,12 +116,13 @@ export const apiService = {
             password: string;
             firstName: string;
             lastName: string;
-        }) => api.post("/auth/register/", {
-            email: userData.email,
-            password: userData.password,
-            first_name: userData.firstName,
-            last_name: userData.lastName,
-        }),
+        }) =>
+            api.post("/auth/register/", {
+                email: userData.email,
+                password: userData.password,
+                first_name: userData.firstName,
+                last_name: userData.lastName,
+            }),
         logout: () => {
             const refreshToken = localStorage.getItem("refreshToken");
             return api.post("/auth/logout/", {
@@ -139,10 +137,12 @@ export const apiService = {
 
     // Routes (Using TomTom API via routing service)
     routes: {
+        // Calculate routes with TomTom API
         calculateRoute: (routeData: {
             origin: { lat: number; lng: number };
             destination: { lat: number; lng: number };
             waypoints?: { lat: number; lng: number }[];
+            user_id?: number;
             options?: {
                 route_type?: "fastest" | "shortest" | "eco";
                 avoid_tolls?: boolean;
@@ -165,6 +165,7 @@ export const apiService = {
             origin: { lat: number; lng: number };
             destination: { lat: number; lng: number };
             waypoints?: { lat: number; lng: number }[];
+            user_id?: number;
             options?: {
                 route_type?: "fastest" | "shortest" | "eco";
                 avoid_tolls?: boolean;
@@ -183,11 +184,12 @@ export const apiService = {
             };
         }) => routingApi.post("/routes/calculate-enhanced", routeData),
 
+        // Search and traffic
         searchPlaces: (searchData: {
             query: string;
             coordinates?: { lat: number; lng: number };
             radius?: number;
-        }) => routingApi.post("/routes/search/", searchData),
+        }) => routingApi.post("/routes/search", searchData),
 
         getTrafficInfo: (trafficData: {
             coordinates: { lat: number; lng: number };
@@ -196,17 +198,41 @@ export const apiService = {
 
         getRouteTypes: () => routingApi.get("/routes/route-types"),
 
-        // Location search/geocoding - Uses POST method as per routing service
+        // Location search/geocoding
         searchLocation: (query: string) =>
             routingApi.post("/routes/search", { query, radius: 50000 }),
 
-        // Legacy endpoints (if you still need them for user data persistence)
-        getRoute: (routeId: string) => api.get(`/routes/${routeId}`),
-        getRoutes: () => api.get("/routes"),
-        saveRoute: (routeData: any) => api.post("/routes", routeData),
-        updateRoutePreferences: (routeId: string, preferences: any) =>
-            api.put(`/routes/${routeId}/preferences`, preferences),
-        deleteRoute: (routeId: string) => api.delete(`/routes/${routeId}`),
+        // Stored routes management - NEW endpoints
+        getUserRoutes: (params: {
+            user_id: number;
+            limit?: number;
+            offset?: number;
+            status?: "active" | "completed" | "cancelled";
+        }) =>
+            routingApi.get(`/routes/user/${params.user_id}`, {
+                params: {
+                    limit: params.limit,
+                    offset: params.offset,
+                    status: params.status,
+                },
+            }),
+
+        getRecentRoutes: (params?: { limit?: number; user_id?: number }) =>
+            routingApi.get("/routes/recent", { params }),
+
+        getRouteDetails: (routeId: string) =>
+            routingApi.get(`/routes/${routeId}`),
+
+        updateRouteStatus: (
+            routeId: string,
+            status: "active" | "completed" | "cancelled"
+        ) =>
+            routingApi.patch(`/routes/${routeId}/status`, null, {
+                params: { new_status: status },
+            }),
+
+        deleteRoute: (routeId: string) =>
+            routingApi.delete(`/routes/${routeId}`),
     },
 
     // Traffic - Direct integration with traffic service (port 8002)

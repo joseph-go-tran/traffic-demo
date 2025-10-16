@@ -3,9 +3,14 @@ from dotenv import dotenv_values
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.v1.routes import routing, users
+from app.api.database import engine
+from app.api.v1.models.route_models import Base
+from app.api.v1.routes import routing
 
 config = dotenv_values(".env")
+
+# Create database tables
+Base.metadata.create_all(bind=engine)
 
 sentry_sdk.init(
     dsn=config.get("SENTRY_KEY"),
@@ -34,7 +39,6 @@ app.add_middleware(
 )
 
 # Include routers
-app.include_router(router=users.router, prefix="/api/v1")
 app.include_router(router=routing.router, prefix="/api/v1")
 
 

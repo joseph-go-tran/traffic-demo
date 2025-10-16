@@ -1,7 +1,10 @@
 from datetime import datetime
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
 
+from app.api.database import get_db
+from app.api.v1.models.route_models import Route, RouteWaypoint
 from app.api.v1.schemas.routing_schemas import (
     CoordinatesSchema,
     ErrorResponseSchema,
@@ -13,6 +16,7 @@ from app.api.v1.schemas.routing_schemas import (
     TrafficRequestSchema,
     TrafficResponseSchema,
 )
+from app.api.v1.services.route_service import route_service
 from app.api.v1.services.tomtom_service import (
     Coordinates,
     RouteOptions,
@@ -20,6 +24,40 @@ from app.api.v1.services.tomtom_service import (
 )
 
 router = APIRouter(prefix="/routes", tags=["routing"])
+
+
+def convert_route_to_json_serializable(route):
+    """
+    Convert RouteResponse Pydantic model to JSON-serializable dictionary.
+    Handles datetime objects by converting them to ISO format strings.
+    """
+    if hasattr(route, "model_dump"):
+        # Pydantic v2
+        route_dict = route.model_dump()
+    elif hasattr(route, "dict"):
+        # Pydantic v1
+        route_dict = route.dict()
+    else:
+        # Already a dict
+        return route
+
+    # Convert datetime objects to strings
+    if "created_at" in route_dict and isinstance(
+        route_dict["created_at"], datetime
+    ):
+        route_dict["created_at"] = route_dict["created_at"].isoformat()
+
+    # Recursively handle nested objects
+    for key, value in route_dict.items():
+        if isinstance(value, datetime):
+            route_dict[key] = value.isoformat()
+        elif isinstance(value, list):
+            route_dict[key] = [
+                item.isoformat() if isinstance(item, datetime) else item
+                for item in value
+            ]
+
+    return route_dict
 
 
 @router.post(
@@ -35,7 +73,9 @@ router = APIRouter(prefix="/routes", tags=["routing"])
         "Calculate the optimal route between two points using TomTom API"
     ),
 )
-async def calculate_route(route_request: RouteRequestSchema):
+async def calculate_route(
+    route_request: RouteRequestSchema, db: Session = Depends(get_db)
+):
     """
     Calculate a route between origin and destination with optional waypoints.
 
@@ -44,6 +84,7 @@ async def calculate_route(route_request: RouteRequestSchema):
     - **waypoints**: Optional intermediate points
     - **options**: Route calculation preferences
     (fastest/shortest/eco, avoid tolls, etc.)
+    - **user_id**: Optional user ID to associate route with user
     """
     try:
         # Convert schema to service models
@@ -82,11 +123,73 @@ async def calculate_route(route_request: RouteRequestSchema):
             options=options,
         )
 
+        # Save route to database
+        try:
+            # Convert RouteResponse object to JSON-serializable dict
+            route_dict = convert_route_to_json_serializable(route)
+
+            db_route = Route(
+                route_id=route.route_id,
+                user_id=route_request.user_id,
+                origin_lat=route_request.origin.lat,
+                origin_lng=route_request.origin.lng,
+                destination_lat=route_request.destination.lat,
+                destination_lng=route_request.destination.lng,
+                total_distance=route.total_distance,
+                total_duration=route.total_duration,
+                polyline=route.polyline,
+                route_type=route_request.options.route_type
+                if route_request.options
+                else "fastest",
+                vehicle_type=route_request.options.vehicle_type
+                if route_request.options
+                else "car",
+                avoid_tolls=1
+                if route_request.options and route_request.options.avoid_tolls
+                else 0,
+                avoid_highways=1
+                if route_request.options
+                and route_request.options.avoid_highways
+                else 0,
+                avoid_ferries=1
+                if route_request.options and route_request.options.avoid_ferries
+                else 0,
+                avoid_unpaved=1
+                if route_request.options and route_request.options.avoid_unpaved
+                else 0,
+                route_data=route_dict,
+                status="active",
+            )
+
+            db.add(db_route)
+            db.commit()
+            db.refresh(db_route)
+
+            # Save waypoints if any
+            if route_request.waypoints and db_route.id:
+                for idx, waypoint in enumerate(route_request.waypoints):
+                    db_waypoint = RouteWaypoint(
+                        route_id=db_route.id,
+                        lat=waypoint.lat,
+                        lng=waypoint.lng,
+                        sequence=idx,
+                    )
+                    db.add(db_waypoint)
+                db.commit()
+
+        except Exception:
+            db.rollback()
+            import traceback
+
+            traceback.print_exc()
+            # Continue and return the route even if database save fails
+
         return route
 
     except HTTPException:
         raise
     except Exception as e:
+        db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to calculate route: {str(e)}",
@@ -311,7 +414,9 @@ async def test_route_calculation(route_request: RouteRequestSchema):
         "Calculate route with enhanced path details and traffic information"
     ),
 )
-async def calculate_enhanced_route(route_request: RouteRequestSchema):
+async def calculate_enhanced_route(
+    route_request: RouteRequestSchema, db: Session = Depends(get_db)
+):
     """
     Calculate a route with enhanced details including:
     - Detailed path coordinates
@@ -368,6 +473,65 @@ async def calculate_enhanced_route(route_request: RouteRequestSchema):
             options=options,
         )
 
+        # Save route to database
+        try:
+            # Convert RouteResponse object to JSON-serializable dict
+            route_dict = convert_route_to_json_serializable(route)
+
+            db_route = Route(
+                route_id=route.route_id,
+                user_id=route_request.user_id,
+                origin_lat=route_request.origin.lat,
+                origin_lng=route_request.origin.lng,
+                destination_lat=route_request.destination.lat,
+                destination_lng=route_request.destination.lng,
+                total_distance=route.total_distance,
+                total_duration=route.total_duration,
+                polyline=route.polyline,
+                route_type=route_request.options.route_type
+                if route_request.options
+                else "fastest",
+                vehicle_type=route_request.options.vehicle_type
+                if route_request.options
+                else "car",
+                avoid_tolls=1
+                if route_request.options and route_request.options.avoid_tolls
+                else 0,
+                avoid_highways=1
+                if route_request.options
+                and route_request.options.avoid_highways
+                else 0,
+                avoid_ferries=1
+                if route_request.options and route_request.options.avoid_ferries
+                else 0,
+                avoid_unpaved=1
+                if route_request.options and route_request.options.avoid_unpaved
+                else 0,
+                route_data=route_dict,
+                status="active",
+            )
+            db.add(db_route)
+            db.commit()
+            db.refresh(db_route)
+
+            # Save waypoints if any
+            if route_request.waypoints:
+                for idx, waypoint in enumerate(route_request.waypoints):
+                    db_waypoint = RouteWaypoint(
+                        route_id=db_route.id,
+                        lat=waypoint.lat,
+                        lng=waypoint.lng,
+                        sequence=idx,
+                    )
+                    db.add(db_waypoint)
+                db.commit()
+        except Exception:
+            db.rollback()
+            import traceback
+
+            traceback.print_exc()
+            # Continue even if DB save fails
+
         # Enhance the route with additional information
         # You could add traffic data here in the future
         return route
@@ -375,7 +539,256 @@ async def calculate_enhanced_route(route_request: RouteRequestSchema):
     except HTTPException:
         raise
     except Exception as e:
+        db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to calculate enhanced route: {str(e)}",
+        )
+
+
+@router.get(
+    "/user/{user_id}",
+    summary="Get User Routes",
+    description="Get all routes for a specific user",
+)
+async def get_user_routes(
+    user_id: int,
+    limit: int = 50,
+    offset: int = 0,
+    status: str = None,
+    db: Session = Depends(get_db),
+):
+    """
+    Get all routes for a specific user with pagination.
+
+    - **user_id**: User ID
+    - **limit**: Maximum number of routes to return (default: 50)
+    - **offset**: Number of routes to skip (default: 0)
+    - **status**: Filter by route status (active, completed, cancelled)
+    """
+    try:
+        routes = route_service.get_routes_by_user(
+            db=db, user_id=user_id, limit=limit, offset=offset, status=status
+        )
+
+        route_list = []
+        for route in routes:
+            route_data = {
+                "route_id": route.route_id,
+                "origin": {"lat": route.origin_lat, "lng": route.origin_lng},
+                "destination": {
+                    "lat": route.destination_lat,
+                    "lng": route.destination_lng,
+                },
+                "total_distance": route.total_distance,
+                "total_duration": route.total_duration,
+                "route_type": route.route_type,
+                "vehicle_type": route.vehicle_type,
+                "status": route.status,
+                "created_at": route.created_at.isoformat(),
+            }
+
+            # Add waypoints if any
+            waypoints = route_service.get_route_waypoints(db, route.id)
+            if waypoints:
+                route_data["waypoints"] = [
+                    {"lat": wp.lat, "lng": wp.lng, "sequence": wp.sequence}
+                    for wp in waypoints
+                ]
+
+            route_list.append(route_data)
+
+        return {
+            "user_id": user_id,
+            "total_routes": len(route_list),
+            "routes": route_list,
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve user routes: {str(e)}",
+        )
+
+
+@router.get(
+    "/recent",
+    summary="Get Recent Routes",
+    description="Get recent routes, optionally filtered by user",
+)
+async def get_recent_routes(
+    limit: int = 10, user_id: int = None, db: Session = Depends(get_db)
+):
+    """
+    Get recent routes.
+
+    - **limit**: Maximum number of routes to return (default: 10)
+    - **user_id**: Optional user ID filter
+    """
+    try:
+        routes = route_service.get_recent_routes(
+            db=db, limit=limit, user_id=user_id
+        )
+
+        route_list = []
+        for route in routes:
+            route_data = {
+                "route_id": route.route_id,
+                "user_id": route.user_id,
+                "origin": {"lat": route.origin_lat, "lng": route.origin_lng},
+                "destination": {
+                    "lat": route.destination_lat,
+                    "lng": route.destination_lng,
+                },
+                "total_distance": route.total_distance,
+                "total_duration": route.total_duration,
+                "status": route.status,
+                "created_at": route.created_at.isoformat(),
+            }
+            route_list.append(route_data)
+
+        return {"total_routes": len(route_list), "routes": route_list}
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve recent routes: {str(e)}",
+        )
+
+
+@router.get(
+    "/{route_id}",
+    summary="Get Route Details",
+    description="Get detailed information about a specific route",
+)
+async def get_route_details(route_id: str, db: Session = Depends(get_db)):
+    """
+    Get detailed information about a specific route.
+
+    - **route_id**: Route ID
+    """
+    try:
+        route = route_service.get_route_by_id(db=db, route_id=route_id)
+
+        if not route:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Route not found"
+            )
+
+        route_data = {
+            "route_id": route.route_id,
+            "user_id": route.user_id,
+            "origin": {"lat": route.origin_lat, "lng": route.origin_lng},
+            "destination": {
+                "lat": route.destination_lat,
+                "lng": route.destination_lng,
+            },
+            "total_distance": route.total_distance,
+            "total_duration": route.total_duration,
+            "polyline": route.polyline,
+            "route_type": route.route_type,
+            "vehicle_type": route.vehicle_type,
+            "options": {
+                "avoid_tolls": bool(route.avoid_tolls),
+                "avoid_highways": bool(route.avoid_highways),
+                "avoid_ferries": bool(route.avoid_ferries),
+                "avoid_unpaved": bool(route.avoid_unpaved),
+            },
+            "status": route.status,
+            "created_at": route.created_at.isoformat(),
+            "full_route_data": route.route_data,
+        }
+
+        # Add waypoints if any
+        waypoints = route_service.get_route_waypoints(db, route.id)
+        if waypoints:
+            route_data["waypoints"] = [
+                {
+                    "lat": wp.lat,
+                    "lng": wp.lng,
+                    "sequence": wp.sequence,
+                    "name": wp.name,
+                    "address": wp.address,
+                }
+                for wp in waypoints
+            ]
+
+        return route_data
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve route: {str(e)}",
+        )
+
+
+@router.patch(
+    "/{route_id}/status",
+    summary="Update Route Status",
+    description="Update the status of a route",
+)
+async def update_route_status(
+    route_id: str, new_status: str, db: Session = Depends(get_db)
+):
+    """
+    Update route status (active, completed, cancelled).
+
+    - **route_id**: Route ID
+    - **new_status**: New status (active, completed, cancelled)
+    """
+    try:
+        if new_status not in ["active", "completed", "cancelled"]:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid status. Must be: active,completed,or cancelled",
+            )
+
+        route = route_service.update_route_status(
+            db=db, route_id=route_id, status=new_status
+        )
+
+        if not route:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Route not found"
+            )
+
+        return {
+            "message": "Route status updated successfully",
+            "route_id": route.route_id,
+            "status": route.status,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update route status: {str(e)}",
+        )
+
+
+@router.delete(
+    "/{route_id}",
+    summary="Delete Route",
+    description="Delete a route from the database",
+)
+async def delete_route(route_id: str, db: Session = Depends(get_db)):
+    """
+    Delete a route.
+
+    - **route_id**: Route ID to delete
+    """
+    try:
+        deleted = route_service.delete_route(db=db, route_id=route_id)
+
+        if not deleted:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="Route not found"
+            )
+
+        return {"message": "Route deleted successfully", "route_id": route_id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete route: {str(e)}",
         )
