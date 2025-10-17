@@ -50,14 +50,14 @@ export default function IncidentAlert({ incident, onDismiss, onViewAlternative }
                 {incident.severity} priority
               </span>
             </div>
-            
-            <div className="flex items-center space-x-2 text-sm text-gray-600 mb-2">
+
+            {/* <div className="flex items-center space-x-2 text-sm text-gray-600 mb-2">
               <MapPin className="h-4 w-4" />
               <span>{incident.location}</span>
-            </div>
-            
+            </div> */}
+
             <p className="text-sm text-gray-700 mb-3">{incident.description}</p>
-            
+
             {incident.estimatedDuration && (
               <div className="flex items-center space-x-2 text-sm text-gray-600 mb-3">
                 <Clock className="h-4 w-4" />
@@ -75,7 +75,7 @@ export default function IncidentAlert({ incident, onDismiss, onViewAlternative }
             )}
           </div>
         </div>
-        
+
         {onDismiss && (
           <button
             onClick={onDismiss}

@@ -58,6 +58,17 @@ export default function NavigationPage({ routeId: routeIdProp }: NavigationPageP
   const [showReportModal, setShowReportModal] = useState(false);
   const [useSimulation, setUseSimulation] = useState(true); // Always use simulation for demo
 
+  // Traffic alerts from socket notifications
+  const [trafficAlerts, setTrafficAlerts] = useState<Array<{
+    id: string;
+    type: 'accident' | 'construction' | 'closure' | 'weather';
+    location: string;
+    description: string;
+    severity: 'low' | 'medium' | 'high';
+    estimatedDuration?: string;
+    alternativeRoute?: string;
+  }>>([]);
+
   // Navigation steps - use actual route data if available
   const navigationSteps = useMemo(() => {
     // Extract from segments/instructions (actual API structure)
@@ -99,7 +110,7 @@ export default function NavigationPage({ routeId: routeIdProp }: NavigationPageP
   }, [routeData]);
 
   // Connect to WebSocket for real-time navigation updates
-  const { connect, disconnect, subscribe } = useNotifications();
+  const { connect, disconnect, subscribe, notifications } = useNotifications();
 
   // Connect WebSocket when navigation starts
   useEffect(() => {
@@ -367,7 +378,8 @@ export default function NavigationPage({ routeId: routeIdProp }: NavigationPageP
     refreshInterval: 60000 // 1 minute
   });
 
-  const incident = {
+  // Default fallback incident
+  const defaultIncident = {
     id: '1',
     type: 'accident' as const,
     location: 'Highway 101, Mile 23',
@@ -375,6 +387,79 @@ export default function NavigationPage({ routeId: routeIdProp }: NavigationPageP
     severity: 'high' as const,
     estimatedDuration: '45-60 minutes',
     alternativeRoute: 'Oak Street Bypass'
+  };
+
+  // Process socket notifications to update traffic alerts
+  useEffect(() => {
+    if (!notifications || notifications.length === 0) return;
+
+    // Find traffic-related notifications
+    const trafficNotifications = notifications.filter(
+      (n) => n.data && (n.data.reportId || n.data.incidentType)
+    );
+
+    if (trafficNotifications.length === 0) return;
+
+    console.log('Processing traffic notifications:', trafficNotifications);
+
+    // Convert notifications to traffic alerts
+    const newAlerts = trafficNotifications.map((notif) => {
+      const data = notif.data || {};
+      const location = data.location || {};
+
+      return {
+        id: data.reportId || `alert-${Date.now()}-${Math.random()}`,
+        type: mapIncidentType(data.incidentType || 'other'),
+        location: location.address || `${location.lat?.toFixed(4) || 'Unknown'}, ${location.lng?.toFixed(4) || 'Location'}`,
+        description: notif.message || data.description || 'Traffic incident reported',
+        severity: mapSeverity(data.severity || notif.type),
+        estimatedDuration: data.estimated_duration,
+        alternativeRoute: undefined
+      };
+    });
+
+    // Update traffic alerts, keeping only the most recent 5
+    setTrafficAlerts((prev) => {
+      const combined = [...newAlerts, ...prev];
+      // Remove duplicates by id
+      const unique = combined.filter((alert, index, self) =>
+        index === self.findIndex((a) => a.id === alert.id)
+      );
+      return unique.slice(0, 5);
+    });
+
+    // Refresh incidents list when new traffic reports arrive
+    refreshIncidents();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notifications]);
+
+  // Helper function to map incident types
+  const mapIncidentType = (type: string): 'accident' | 'construction' | 'closure' | 'weather' => {
+    const typeMap: Record<string, 'accident' | 'construction' | 'closure' | 'weather'> = {
+      'accident': 'accident',
+      'construction': 'construction',
+      'road_closure': 'closure',
+      'closure': 'closure',
+      'weather': 'weather',
+      'congestion': 'accident', // Map to accident as fallback
+      'hazard': 'accident',
+      'other': 'accident'
+    };
+    return typeMap[type] || 'accident';
+  };
+
+  // Helper function to map severity
+  const mapSeverity = (severity: string): 'low' | 'medium' | 'high' => {
+    const severityMap: Record<string, 'low' | 'medium' | 'high'> = {
+      'low': 'low',
+      'info': 'low',
+      'medium': 'medium',
+      'warning': 'medium',
+      'high': 'high',
+      'error': 'high',
+      'critical': 'high'
+    };
+    return severityMap[severity] || 'medium';
   };
 
   useEffect(() => {
@@ -753,19 +838,60 @@ export default function NavigationPage({ routeId: routeIdProp }: NavigationPageP
         {/* Incidents and Alerts */}
         <div className="space-y-6">
           <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Traffic Alerts</h2>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+              Traffic Alerts
+              {trafficAlerts.length > 0 && (
+                <span className="ml-2 text-sm font-normal text-gray-600">
+                  ({trafficAlerts.length} {trafficAlerts.length === 1 ? 'alert' : 'alerts'})
+                </span>
+              )}
+            </h2>
 
-            <IncidentAlert
-              incident={incident}
-              onViewAlternative={() => handleRecalculate()}
-            />
+            {/* Display traffic alerts from socket notifications */}
+            {trafficAlerts.length > 0 ? (
+              <div className="space-y-3">
+                {trafficAlerts.map((alert) => (
+                  <IncidentAlert
+                    key={alert.id}
+                    incident={alert}
+                    onViewAlternative={() => handleRecalculate()}
+                    onDismiss={() => {
+                      setTrafficAlerts((prev) => prev.filter((a) => a.id !== alert.id));
+                    }}
+                  />
+                ))}
+              </div>
+            ) : (
+              <IncidentAlert
+                incident={defaultIncident}
+                onViewAlternative={() => handleRecalculate()}
+              />
+            )}
 
-            <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <h3 className="font-medium text-yellow-800 mb-2">Construction Ahead</h3>
-              <p className="text-sm text-yellow-700">
-                Lane closure on Business Blvd starting tomorrow. Consider alternate routes.
-              </p>
-            </div>
+            {/* Show nearby incidents count */}
+            {incidents.length > 0 && (
+              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-medium text-blue-800">
+                      {incidents.length} Nearby {incidents.length === 1 ? 'Incident' : 'Incidents'}
+                    </h3>
+                    <p className="text-sm text-blue-700">
+                      Within 15km of your location
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      // Could open a modal or expand to show all incidents
+                      console.log('View all incidents:', incidents);
+                    }}
+                    className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                  >
+                    View All
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Quick Actions */}
@@ -802,16 +928,16 @@ export default function NavigationPage({ routeId: routeIdProp }: NavigationPageP
           </div>
 
           {/* GPS Timeline */}
-          <GPSTimeline
+          {/* <GPSTimeline
             points={timelinePoints}
             currentLocation={currentPosition ? { lat: currentPosition.lat, lng: currentPosition.lng } : undefined}
             totalDistance={routeData?.total_distance || totalDistance || 18200}
             onPointClick={(point) => console.log('Timeline point clicked:', point)}
             showDetails={true}
-          />
+          /> */}
 
           {/* Traffic Incidents List */}
-          {incidents.length > 0 && (
+          {/* {incidents.length > 0 && (
             <div className="bg-white rounded-lg shadow-lg p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">
                 Nearby Incidents ({incidents.length})
@@ -822,7 +948,7 @@ export default function NavigationPage({ routeId: routeIdProp }: NavigationPageP
                 showVoting={true}
               />
             </div>
-          )}
+          )} */}
         </div>
       </div>
 
