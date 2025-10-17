@@ -67,6 +67,7 @@ export default function NavigationPage({ routeId: routeIdProp }: NavigationPageP
     severity: 'low' | 'medium' | 'high';
     estimatedDuration?: string;
     alternativeRoute?: string;
+    coordinates?: { lat: number; lng: number }; // Store coordinates for distance filtering
   }>>([]);
 
   // Navigation steps - use actual route data if available
@@ -373,7 +374,7 @@ export default function NavigationPage({ routeId: routeIdProp }: NavigationPageP
     refreshIncidents
   } = useTrafficIncidents({
     location: latitude && longitude ? { lat: latitude, lng: longitude } : undefined,
-    radius: 15.0, // 15km radius
+    radius: 5.0, // 5km radius
     autoRefresh: true,
     refreshInterval: 60000 // 1 minute
   });
@@ -389,9 +390,31 @@ export default function NavigationPage({ routeId: routeIdProp }: NavigationPageP
     alternativeRoute: 'Oak Street Bypass'
   };
 
+  // Helper function to calculate distance between two coordinates (Haversine formula)
+  const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
+    const R = 6371; // Earth's radius in kilometers
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; // Distance in kilometers
+  };
+
   // Process socket notifications to update traffic alerts
   useEffect(() => {
     if (!notifications || notifications.length === 0) return;
+
+    // Get current position (prefer GPS position, fallback to geolocation)
+    const currentLat = currentPosition?.lat || latitude;
+    const currentLng = currentPosition?.lng || longitude;
+
+    if (!currentLat || !currentLng) {
+      console.log('No GPS position available for distance filtering');
+      return;
+    }
 
     // Find traffic-related notifications
     const trafficNotifications = notifications.filter(
@@ -402,36 +425,75 @@ export default function NavigationPage({ routeId: routeIdProp }: NavigationPageP
 
     console.log('Processing traffic notifications:', trafficNotifications);
 
-    // Convert notifications to traffic alerts
-    const newAlerts = trafficNotifications.map((notif) => {
-      const data = notif.data || {};
-      const location = data.location || {};
+    // Convert notifications to traffic alerts and filter by distance
+    const newAlerts = trafficNotifications
+      .map((notif) => {
+        const data = notif.data || {};
+        const location = data.location || {};
 
-      return {
-        id: data.reportId || `alert-${Date.now()}-${Math.random()}`,
-        type: mapIncidentType(data.incidentType || 'other'),
-        location: location.address || `${location.lat?.toFixed(4) || 'Unknown'}, ${location.lng?.toFixed(4) || 'Location'}`,
-        description: notif.message || data.description || 'Traffic incident reported',
-        severity: mapSeverity(data.severity || notif.type),
-        estimatedDuration: data.estimated_duration,
-        alternativeRoute: undefined
-      };
-    });
+        // Extract coordinates from notification
+        const alertLat = location.lat;
+        const alertLng = location.lng;
 
-    // Update traffic alerts, keeping only the most recent 5
+        return {
+          id: data.reportId || `alert-${Date.now()}-${Math.random()}`,
+          type: mapIncidentType(data.incidentType || 'other'),
+          location: location.address || `${alertLat?.toFixed(4) || 'Unknown'}, ${alertLng?.toFixed(4) || 'Location'}`,
+          description: notif.message || data.description || 'Traffic incident reported',
+          severity: mapSeverity(data.severity || notif.type),
+          estimatedDuration: data.estimated_duration,
+          alternativeRoute: undefined,
+          coordinates: alertLat && alertLng ? { lat: alertLat, lng: alertLng } : undefined
+        };
+      })
+      .filter((alert) => {
+        // Filter alerts within 5km radius
+        if (!alert.coordinates) {
+          console.log('Alert has no coordinates, excluding:', alert.id);
+          return false;
+        }
+
+        const distance = calculateDistance(
+          currentLat,
+          currentLng,
+          alert.coordinates.lat,
+          alert.coordinates.lng
+        );
+
+        console.log(`Alert ${alert.id} distance: ${distance.toFixed(2)}km`);
+
+        return distance <= 5.0; // Only include alerts within 5km
+      });
+
+    console.log(`Filtered ${newAlerts.length} alerts within 5km of current position`);
+
+    // Update traffic alerts, keeping only the most recent 5 within range
     setTrafficAlerts((prev) => {
       const combined = [...newAlerts, ...prev];
       // Remove duplicates by id
       const unique = combined.filter((alert, index, self) =>
         index === self.findIndex((a) => a.id === alert.id)
       );
-      return unique.slice(0, 5);
+
+      // Re-filter all alerts by distance in case position changed
+      const withinRange = unique.filter((alert) => {
+        if (!alert.coordinates) return false;
+        const distance = calculateDistance(
+          currentLat,
+          currentLng,
+          alert.coordinates.lat,
+          alert.coordinates.lng
+        );
+        return distance <= 5.0;
+      });
+
+      return withinRange.slice(0, 5);
     });
 
     // Refresh incidents list when new traffic reports arrive
     refreshIncidents();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [notifications]);
+  }, [notifications, currentPosition, latitude, longitude]);
 
   // Helper function to map incident types
   const mapIncidentType = (type: string): 'accident' | 'construction' | 'closure' | 'weather' => {
@@ -842,7 +904,7 @@ export default function NavigationPage({ routeId: routeIdProp }: NavigationPageP
               Traffic Alerts
               {trafficAlerts.length > 0 && (
                 <span className="ml-2 text-sm font-normal text-gray-600">
-                  ({trafficAlerts.length} {trafficAlerts.length === 1 ? 'alert' : 'alerts'})
+                  ({trafficAlerts.length} within 5km)
                 </span>
               )}
             </h2>
@@ -850,22 +912,51 @@ export default function NavigationPage({ routeId: routeIdProp }: NavigationPageP
             {/* Display traffic alerts from socket notifications */}
             {trafficAlerts.length > 0 ? (
               <div className="space-y-3">
-                {trafficAlerts.map((alert) => (
-                  <IncidentAlert
-                    key={alert.id}
-                    incident={alert}
-                    onViewAlternative={() => handleRecalculate()}
-                    onDismiss={() => {
-                      setTrafficAlerts((prev) => prev.filter((a) => a.id !== alert.id));
-                    }}
-                  />
-                ))}
+                {trafficAlerts.map((alert) => {
+                  // Calculate distance for display
+                  const currentLat = currentPosition?.lat || latitude;
+                  const currentLng = currentPosition?.lng || longitude;
+                  let distanceText = '';
+
+                  if (alert.coordinates && currentLat && currentLng) {
+                    const distance = calculateDistance(
+                      currentLat,
+                      currentLng,
+                      alert.coordinates.lat,
+                      alert.coordinates.lng
+                    );
+                    distanceText = `${distance < 1 ? (distance * 1000).toFixed(0) + 'm' : distance.toFixed(1) + 'km'} away`;
+                  }
+
+                  return (
+                    <div key={alert.id}>
+                      {distanceText && (
+                        <div className="text-xs text-gray-500 mb-1 flex items-center">
+                          <span className="inline-block w-2 h-2 bg-blue-500 rounded-full mr-1.5"></span>
+                          {distanceText}
+                        </div>
+                      )}
+                      <IncidentAlert
+                        incident={alert}
+                        onViewAlternative={() => handleRecalculate()}
+                        onDismiss={() => {
+                          setTrafficAlerts((prev) => prev.filter((a) => a.id !== alert.id));
+                        }}
+                      />
+                    </div>
+                  );
+                })}
               </div>
             ) : (
-              <IncidentAlert
-                incident={defaultIncident}
-                onViewAlternative={() => handleRecalculate()}
-              />
+              <div>
+                <div className="text-sm text-gray-500 mb-3 text-center">
+                  No traffic alerts within 5km of your current position
+                </div>
+                <IncidentAlert
+                  incident={defaultIncident}
+                  onViewAlternative={() => handleRecalculate()}
+                />
+              </div>
             )}
 
             {/* Show nearby incidents count */}
@@ -877,7 +968,7 @@ export default function NavigationPage({ routeId: routeIdProp }: NavigationPageP
                       {incidents.length} Nearby {incidents.length === 1 ? 'Incident' : 'Incidents'}
                     </h3>
                     <p className="text-sm text-blue-700">
-                      Within 15km of your location
+                      Within 5km of your location
                     </p>
                   </div>
                   <button
