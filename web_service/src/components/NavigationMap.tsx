@@ -258,8 +258,8 @@ export default function NavigationMap({
   const startPoint = routeCoordinates.length > 0 ? routeCoordinates[0] : defaultStart;
   const endPoint = routeCoordinates.length > 0 ? routeCoordinates[routeCoordinates.length - 1] : defaultEnd;
 
-  // All positions for bounds calculation
-  const allPositions = routeCoordinates.length > 0 ? routeCoordinates : [startPoint, endPoint];
+  // All positions for bounds calculation (create a new array to avoid modifying routeCoordinates)
+  const allPositions = routeCoordinates.length > 0 ? [...routeCoordinates] : [startPoint, endPoint];
   if (userLocation) {
     allPositions.push([userLocation.lat, userLocation.lng]);
   }
@@ -337,73 +337,22 @@ export default function NavigationMap({
 
         {/* Route visualization based on navigation state */}
         {isNavigating ? (
-          /* Navigation mode: Show passed (completed) and unpassed (remaining) sections */
-          <>
-            {/* Find the closest point to user's current location for progress */}
-            {(() => {
-              let closestIndex = 0;
-
-              if (userLocation && routeCoordinates.length > 0) {
-                let minDistance = Infinity;
-                routeCoordinates.forEach((coord, index) => {
-                  const distance = Math.sqrt(
-                    Math.pow(coord[0] - userLocation.lat, 2) +
-                    Math.pow(coord[1] - userLocation.lng, 2)
-                  );
-                  if (distance < minDistance) {
-                    minDistance = distance;
-                    closestIndex = index;
-                  }
-                });
-              }
-
-              return (
-                <>
-                  {/* Passed/Completed route (green) */}
-                  {closestIndex > 0 && (
-                    <Polyline
-                      positions={routeCoordinates.slice(0, closestIndex + 1)}
-                      color="#10B981"
-                      weight={8}
-                      opacity={0.9}
-                    >
-                      <Popup>
-                        <div>
-                          <strong>Completed Route</strong><br />
-                          You've traveled this section
-                        </div>
-                      </Popup>
-                    </Polyline>
-                  )}
-
-                  {/* Unpassed/Remaining route (blue/purple) */}
-                  {closestIndex < routeCoordinates.length - 1 && (
-                    <Polyline
-                      positions={routeCoordinates.slice(closestIndex)}
-                      color="#7C3AED"
-                      weight={8}
-                      opacity={0.9}
-                    >
-                      <Popup>
-                        <div>
-                          <strong>Remaining Route</strong><br />
-                          Follow this path to your destination
-                        </div>
-                      </Popup>
-                    </Polyline>
-                  )}
-
-                  {/* Subtle outline for the entire route */}
-                  <Polyline
-                    positions={routeCoordinates}
-                    color="#1F2937"
-                    weight={3}
-                    opacity={0.2}
-                  />
-                </>
-              );
-            })()}
-          </>
+          /* Navigation mode: Show route path along the road only */
+          routeCoordinates.length > 1 ? (
+            <Polyline
+              positions={routeCoordinates}
+              color="#3B82F6"
+              weight={6}
+              opacity={0.8}
+            >
+              <Popup>
+                <div>
+                  <strong>Route Path</strong><br />
+                  Path from start to destination
+                </div>
+              </Popup>
+            </Polyline>
+          ) : null
         ) : (
           /* Planning mode: Show traffic stress or simple route */
           <>
@@ -462,17 +411,13 @@ export default function NavigationMap({
       {/* Legend - changes based on navigation state */}
       <div className="absolute bottom-4 left-4 bg-white bg-opacity-95 p-3 rounded-lg shadow-lg z-1000">
         {isNavigating ? (
-          /* Navigation Progress Legend */
+          /* Navigation Progress Legend - only completed route shown */
           <>
             <div className="text-xs font-semibold text-gray-800 mb-2">Route Progress</div>
             <div className="space-y-1">
               <div className="flex items-center space-x-2">
                 <div className="w-4 h-2 rounded" style={{ backgroundColor: '#10B981' }}></div>
-                <span className="text-xs text-gray-600">Completed</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-4 h-2 rounded" style={{ backgroundColor: '#7C3AED' }}></div>
-                <span className="text-xs text-gray-600">Remaining</span>
+                <span className="text-xs text-gray-600">Completed Path</span>
               </div>
             </div>
           </>
