@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, MapPin, Clock, Repeat } from 'lucide-react';
 import NavigationMap from '../NavigationMap';
 import RouteCard from '../RouteCard';
@@ -7,6 +7,7 @@ import { useCalculateEnhancedRoute, RouteRequest, Coordinates } from '../../hook
 import { useNotifications } from '../../contexts/NotificationContext';
 
 interface RoutePlanningPageProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onNavigate?: (routeId: string, routeData?: any) => void;
 }
 
@@ -16,12 +17,13 @@ export default function RoutePlanningPage({ onNavigate }: RoutePlanningPageProps
   const [fromCoordinates, setFromCoordinates] = useState<Coordinates | null>(null);
   const [toCoordinates, setToCoordinates] = useState<Coordinates | null>(null);
   const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [routes, setRoutes] = useState<any[]>([]);
 
   const calculateRouteMutation = useCalculateEnhancedRoute();
 
   // Connect to WebSocket for real-time route updates
-  const { connect, disconnect, isConnected, subscribe } = useNotifications();
+  const { connect, disconnect, subscribe } = useNotifications();
 
   // Connect WebSocket when route planning page loads
   useEffect(() => {
@@ -41,35 +43,6 @@ export default function RoutePlanningPage({ onNavigate }: RoutePlanningPageProps
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty deps - only run on mount/unmount
-
-  const mockRoutes = [
-    {
-      id: '1',
-      name: 'Fastest Route',
-      distance: '24.5 miles',
-      duration: '32 min',
-      delay: '5 min',
-      incidents: 1,
-      traffic: 'moderate' as const
-    },
-    {
-      id: '2',
-      name: 'Scenic Route',
-      distance: '28.1 miles',
-      duration: '38 min',
-      incidents: 0,
-      traffic: 'light' as const
-    },
-    {
-      id: '3',
-      name: 'Highway Route',
-      distance: '22.8 miles',
-      duration: '45 min',
-      delay: '12 min',
-      incidents: 3,
-      traffic: 'heavy' as const
-    }
-  ];
 
   const handleSearch = async () => {
     if (!fromCoordinates || !toCoordinates) {
@@ -278,16 +251,125 @@ export default function RoutePlanningPage({ onNavigate }: RoutePlanningPageProps
 
         {/* Right Panel - Map */}
         <div className="space-y-6">
-          <div className="h-96 rounded-lg overflow-hidden shadow-lg">
-            <NavigationMap
-              routeData={selectedRoute ? displayRoutes.find(r => r.id === selectedRoute)?.data : undefined}
-              fromLocation={fromLocation}
-              toLocation={toLocation}
-              isNavigating={false}
-              showTrafficStress={true}
-            />
+          {/* Map Container */}
+          <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
+            <div className="bg-gradient-to-r from-purple-600 to-blue-600 px-4 py-3 text-white">
+              <h3 className="font-semibold flex items-center gap-2">
+                <MapPin className="h-5 w-5" />
+                Route Visualization
+              </h3>
+            </div>
+            <div className="h-[500px] relative">
+              {/* Show placeholder when no route is selected */}
+              {!fromCoordinates && !toCoordinates && displayRoutes.length === 0 && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50">
+                  <div className="text-center p-8">
+                    <MapPin className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-600 font-medium mb-2">No Route Selected</p>
+                    <p className="text-sm text-gray-500">Enter locations and search to see routes on the map</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Show coordinates selected message */}
+              {(fromCoordinates || toCoordinates) && displayRoutes.length === 0 && !calculateRouteMutation.isPending && (
+                <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50">
+                  <div className="text-center p-8">
+                    <MapPin className="h-16 w-16 text-green-500 mx-auto mb-4" />
+                    <p className="text-gray-700 font-medium mb-2">Locations Selected</p>
+                    <p className="text-sm text-gray-600 mb-4">
+                      {fromCoordinates && toCoordinates
+                        ? 'Click "Find Routes" to calculate and display routes on the map'
+                        : fromCoordinates
+                          ? 'Please select a destination'
+                          : 'Please select a starting location'}
+                    </p>
+                    {fromCoordinates && toCoordinates && (
+                      <button
+                        onClick={handleSearch}
+                        className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors"
+                      >
+                        Find Routes
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Show map when routes are available */}
+              {displayRoutes.length > 0 && (
+                <NavigationMap
+                  routeData={selectedRoute ? displayRoutes.find(r => r.id === selectedRoute)?.data : displayRoutes[0]?.data}
+                  fromLocation={fromLocation}
+                  toLocation={toLocation}
+                  isNavigating={false}
+                  showTrafficStress={true}
+                />
+              )}
+
+              {/* Loading indicator */}
+              {calculateRouteMutation.isPending && (
+                <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-3"></div>
+                    <p className="text-gray-700 font-medium">Calculating routes...</p>
+                    <p className="text-sm text-gray-500 mt-1">Finding the best paths for you</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Map Legend */}
+            {displayRoutes.length > 0 && (
+              <div className="px-4 py-3 bg-gray-50 border-t border-gray-200">
+                <div className="space-y-2">
+                  {/* Route markers */}
+                  <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-1">
+                        <div className="w-3 h-3 rounded-full bg-green-500 border border-green-600"></div>
+                        <span className="text-gray-600">Start</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <div className="w-3 h-3 rounded-full bg-red-500 border border-red-600"></div>
+                        <span className="text-gray-600">Destination</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <div className="w-8 h-1 bg-blue-500"></div>
+                        <span className="text-gray-600">Route Path</span>
+                      </div>
+                    </div>
+                    <div className="text-gray-500">
+                      {selectedRoute ? 'Showing selected route' : `${displayRoutes.length} routes calculated`}
+                    </div>
+                  </div>
+
+                  {/* Traffic stress legend */}
+                  <div className="flex items-center gap-3 text-xs pt-2 border-t border-gray-200">
+                    <span className="text-gray-600 font-medium">Traffic:</span>
+                    <div className="flex items-center gap-1">
+                      <div className="w-6 h-1 bg-green-500"></div>
+                      <span className="text-gray-600">Light</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-6 h-1 bg-yellow-500"></div>
+                      <span className="text-gray-600">Moderate</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-6 h-1 bg-orange-500"></div>
+                      <span className="text-gray-600">Heavy</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-6 h-1 bg-red-600"></div>
+                      <span className="text-gray-600">Severe</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
+          {/* Route Summary Panel */}
           {selectedRoute && (
             <div className="bg-white p-6 rounded-lg shadow-lg border border-gray-200">
               <h3 className="font-semibold text-gray-900 mb-4">Route Summary</h3>

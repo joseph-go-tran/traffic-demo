@@ -5,6 +5,7 @@ import 'leaflet/dist/leaflet.css';
 import { RouteResponse } from '../hooks/useRouting';
 
 // Fix for default markers in Leaflet with React
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -334,67 +335,110 @@ export default function NavigationMap({
           </Marker>
         )}
 
-        {/* Traffic stress segments */}
-        {showTrafficStress && trafficSegments.length > 0 ? (
-          trafficSegments.map((segment, index) => (
-            <Polyline
-              key={`traffic-${index}`}
-              positions={segment.coordinates}
-              color={TrafficStressColors[segment.stressLevel]}
-              weight={8}
-              opacity={0.8}
-            >
-              <Popup>
-                <div>
-                  <strong>Traffic Conditions</strong><br />
-                  <div className="capitalize">Stress Level: {segment.stressLevel}</div>
-                  <div>Speed: ~{segment.speed} mph</div>
-                  {segment.delay > 0 && <div>Delay: +{segment.delay} min</div>}
-                </div>
-              </Popup>
-            </Polyline>
-          ))
+        {/* Route visualization based on navigation state */}
+        {isNavigating ? (
+          /* Navigation mode: Show passed (completed) and unpassed (remaining) sections */
+          <>
+            {/* Find the closest point to user's current location for progress */}
+            {(() => {
+              let closestIndex = 0;
+
+              if (userLocation && routeCoordinates.length > 0) {
+                let minDistance = Infinity;
+                routeCoordinates.forEach((coord, index) => {
+                  const distance = Math.sqrt(
+                    Math.pow(coord[0] - userLocation.lat, 2) +
+                    Math.pow(coord[1] - userLocation.lng, 2)
+                  );
+                  if (distance < minDistance) {
+                    minDistance = distance;
+                    closestIndex = index;
+                  }
+                });
+              }
+
+              return (
+                <>
+                  {/* Passed/Completed route (green) */}
+                  {closestIndex > 0 && (
+                    <Polyline
+                      positions={routeCoordinates.slice(0, closestIndex + 1)}
+                      color="#10B981"
+                      weight={8}
+                      opacity={0.9}
+                    >
+                      <Popup>
+                        <div>
+                          <strong>Completed Route</strong><br />
+                          You've traveled this section
+                        </div>
+                      </Popup>
+                    </Polyline>
+                  )}
+
+                  {/* Unpassed/Remaining route (blue/purple) */}
+                  {closestIndex < routeCoordinates.length - 1 && (
+                    <Polyline
+                      positions={routeCoordinates.slice(closestIndex)}
+                      color="#7C3AED"
+                      weight={8}
+                      opacity={0.9}
+                    >
+                      <Popup>
+                        <div>
+                          <strong>Remaining Route</strong><br />
+                          Follow this path to your destination
+                        </div>
+                      </Popup>
+                    </Polyline>
+                  )}
+
+                  {/* Subtle outline for the entire route */}
+                  <Polyline
+                    positions={routeCoordinates}
+                    color="#1F2937"
+                    weight={3}
+                    opacity={0.2}
+                  />
+                </>
+              );
+            })()}
+          </>
         ) : (
-          /* Regular route polyline when traffic stress is disabled */
-          routeCoordinates.length > 1 && (
-            <Polyline
-              positions={routeCoordinates}
-              color={isNavigating ? "#7C3AED" : "#3B82F6"}
-              weight={6}
-              opacity={0.9}
-            />
-          )
-        )}
-
-        {/* Base route outline (shown under traffic segments for reference) */}
-        {showTrafficStress && routeCoordinates.length > 1 && (
-          <Polyline
-            positions={routeCoordinates}
-            color="#1F2937"
-            weight={3}
-            opacity={0.3}
-          />
-        )}
-
-        {/* Completed route section (different color) */}
-        {isNavigating && currentStep > 0 && routeCoordinates.length > 1 && (
-          <Polyline
-            positions={routeCoordinates.slice(0, Math.min(currentStep + 2, routeCoordinates.length))}
-            color="#10B981"
-            weight={7}
-            opacity={0.9}
-          />
-        )}
-
-        {/* Next step preview (lighter color) */}
-        {isNavigating && currentStep < routeCoordinates.length - 2 && (
-          <Polyline
-            positions={routeCoordinates.slice(currentStep, Math.min(currentStep + 3, routeCoordinates.length))}
-            color="#F59E0B"
-            weight={5}
-            opacity={0.7}
-            dashArray="5, 10"
-          />
+          /* Planning mode: Show traffic stress or simple route */
+          <>
+            {showTrafficStress && trafficSegments.length > 0 ? (
+              /* Show traffic stress when not navigating and enabled */
+              trafficSegments.map((segment, index) => (
+                <Polyline
+                  key={`traffic-${index}`}
+                  positions={segment.coordinates}
+                  color={TrafficStressColors[segment.stressLevel]}
+                  weight={8}
+                  opacity={0.8}
+                >
+                  <Popup>
+                    <div>
+                      <strong>Traffic Conditions</strong><br />
+                      <div className="capitalize">Stress Level: {segment.stressLevel}</div>
+                      <div>Speed: ~{segment.speed} mph</div>
+                      {segment.delay && segment.delay > 0 && <div>Delay: +{segment.delay} min</div>}
+                    </div>
+                  </Popup>
+                </Polyline>
+              ))
+            ) : (
+              /* Simple route line when traffic is disabled */
+              routeCoordinates.length > 1 && (
+                <Polyline
+                  positions={routeCoordinates}
+                  color="#3B82F6"
+                  weight={6}
+                  opacity={0.9}
+                />
+              )
+            )}
+          </>
         )}
       </MapContainer>
 
@@ -415,34 +459,59 @@ export default function NavigationMap({
         </div>
       )}
 
-      {/* Traffic stress legend */}
-      {showTrafficStress && (
-        <div className="absolute bottom-4 left-4 bg-white bg-opacity-95 p-3 rounded-lg shadow-lg z-1000">
-          <div className="text-xs font-semibold text-gray-800 mb-2">Traffic Stress</div>
-          <div className="space-y-1">
-            {Object.entries(TrafficStressColors).map(([level, color]) => (
-              level !== 'unknown' && (
-                <div key={level} className="flex items-center space-x-2">
-                  <div
-                    className="w-4 h-2 rounded"
-                    style={{ backgroundColor: color }}
-                  ></div>
-                  <span className="text-xs text-gray-600 capitalize">{level}</span>
-                </div>
-              )
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Legend - changes based on navigation state */}
+      <div className="absolute bottom-4 left-4 bg-white bg-opacity-95 p-3 rounded-lg shadow-lg z-1000">
+        {isNavigating ? (
+          /* Navigation Progress Legend */
+          <>
+            <div className="text-xs font-semibold text-gray-800 mb-2">Route Progress</div>
+            <div className="space-y-1">
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-2 rounded" style={{ backgroundColor: '#10B981' }}></div>
+                <span className="text-xs text-gray-600">Completed</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-4 h-2 rounded" style={{ backgroundColor: '#7C3AED' }}></div>
+                <span className="text-xs text-gray-600">Remaining</span>
+              </div>
+            </div>
+          </>
+        ) : (
+          /* Traffic Stress Legend (planning mode) */
+          showTrafficStress && (
+            <>
+              <div className="text-xs font-semibold text-gray-800 mb-2">Traffic Stress</div>
+              <div className="space-y-1">
+                {Object.entries(TrafficStressColors).map(([level, color]) => (
+                  level !== 'unknown' && (
+                    <div key={level} className="flex items-center space-x-2">
+                      <div
+                        className="w-4 h-2 rounded"
+                        style={{ backgroundColor: color }}
+                      ></div>
+                      <span className="text-xs text-gray-600 capitalize">{level}</span>
+                    </div>
+                  )
+                ))}
+              </div>
+            </>
+          )
+        )}
+      </div>
 
       {/* Route type indicator */}
       <div className="absolute top-4 right-4 bg-white bg-opacity-95 p-2 rounded-lg shadow-lg z-1000">
         <div className="text-xs font-medium text-gray-700">
           {routeData ? 'Live Route' : 'Demo Route'}
         </div>
-        {showTrafficStress && (
+        {!isNavigating && showTrafficStress && (
           <div className="text-xs text-gray-500 mt-1">
             Traffic: Real-time
+          </div>
+        )}
+        {isNavigating && (
+          <div className="text-xs text-gray-500 mt-1">
+            Navigation Active
           </div>
         )}
       </div>
