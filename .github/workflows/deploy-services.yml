@@ -73,6 +73,15 @@ jobs:
           cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/user-service:buildcache
           cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/user-service:buildcache,mode=max
 
+      - name: Copy docker-compose.yml to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "./user_service/docker-compose.yml"
+          target: "~/traffic_demo/user_service/"
+
       - name: Deploy to server
         if: github.ref == 'refs/heads/main'
         uses: appleboy/ssh-action@v1.0.0
@@ -81,6 +90,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            set -e
             mkdir -p ~/traffic_demo/user_service
             cd ~/traffic_demo/user_service
             docker compose pull

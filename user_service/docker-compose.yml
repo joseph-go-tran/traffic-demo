@@ -2,17 +2,18 @@ version: "3.7"
 
 services:
     web:
-        build:
-            context: ./
-            dockerfile: Dockerfile
-        command: ./docker-entrypoint.sh -- python manage.py runserver 0.0.0.0:8000
-        volumes:
-            - .:/usr/src/app/
+        image: josephgotran/user-service:latest
+        container_name: user_service
+        restart: always
         ports:
-            - 8000:8000
+        - "8000:8000"
         environment:
-            - SECRET_KEY=${SECRET_KEY}
-            - DJANGO_SETTINGS_MODULE=django_template.settings.dev
+        - SECRET_KEY=${SECRET_KEY}
+        - DJANGO_SETTINGS_MODULE=django_template.settings.prod
+        - DB_HOST=db
+        - DB_USER=${DB_DEV_USER}
+        - DB_PASSWORD=${DB_DEV_PASSWORD}
+        - DB_NAME=${DB_DEV_USER_NAME}
         depends_on:
             - db
     db:
@@ -26,7 +27,7 @@ services:
         ports:
             - 5432:5432
     redis:
-        image: redis:7.2.3-alpine
+        image: redis:7.2.3-alpineư
         volumes:
             - ./tmp/redis/data:/data
         ports:
