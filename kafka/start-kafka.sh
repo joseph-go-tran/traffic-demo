@@ -5,8 +5,7 @@ echo ""
 
 # Start Kafka
 echo "📡 Starting Kafka & Zookeeper..."
-cd kafka
-docker-compose up -d
+docker compose up -d
 cd ..
 
 echo "⏳ Waiting for Kafka to be ready (30 seconds)..."

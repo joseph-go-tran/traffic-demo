@@ -417,4 +417,4 @@ jobs:
           script: |
             mkdir -p ~/traffic_demo/kafka
             cd ~/traffic_demo/kafka
-            ./start-kafka.sh
+            docker compose up -d
