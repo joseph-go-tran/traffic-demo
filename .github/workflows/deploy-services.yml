@@ -82,8 +82,8 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /path/to/deployment/user_service
-            docker-compose pull
-            docker-compose up -d --force-recreate
+            docker compose pull
+            docker compose up -d --force-recreate
             docker image prune -f
 
   build-notification-service:
@@ -160,8 +160,8 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /path/to/deployment/notification_service
-            docker-compose pull
-            docker-compose up -d --force-recreate
+            docker compose pull
+            docker compose up -d --force-recreate
             docker image prune -f
 
   build-routing-service:
@@ -222,8 +222,8 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /path/to/deployment/routing_service
-            docker-compose pull
-            docker-compose up -d --force-recreate
+            docker compose pull
+            docker compose up -d --force-recreate
             docker image prune -f
 
   build-traffic-service:
@@ -284,8 +284,8 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /path/to/deployment/traffic_service
-            docker-compose pull
-            docker-compose up -d --force-recreate
+            docker compose pull
+            docker compose up -d --force-recreate
             docker image prune -f
 
   build-web-service:
@@ -364,8 +364,8 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /path/to/deployment/web_service
-            docker-compose pull
-            docker-compose up -d --force-recreate
+            docker compose pull
+            docker compose up -d --force-recreate
             docker image prune -f
 
   build-kafka:
@@ -386,6 +386,6 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             cd /path/to/deployment/kafka
-            docker-compose pull
-            docker-compose up -d --force-recreate
+            docker compose pull
+            docker compose up -d --force-recreate
             docker image prune -f
