@@ -93,6 +93,12 @@ jobs:
             set -e
             mkdir -p ~/traffic_demo/user_service
             cd ~/traffic_demo/user_service
+            cat > .env <<EOF
+            SECRET_KEY=${{ vars.SECRET_KEY }}
+            DB_DEV_USER=${{ vars.DB_DEV_USER }}
+            DB_DEV_PASSWORD=${{ vars.DB_DEV_PASSWORD }}
+            DB_DEV_USER_NAME=${{ vars.DB_DEV_USER_NAME }}
+            EOF
             docker compose pull
             docker compose up -d --force-recreate
             docker image prune -f
