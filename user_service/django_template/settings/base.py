@@ -67,7 +67,7 @@ INSTALLED_APPS = [
 ]
 
 # JWT RSA Keys Configuration
-keys_dir = os.path.join(os.path.dirname(BASE_DIR), "keys")
+keys_dir = os.environ.get("JWT_KEYS_DIR", os.path.join(BASE_DIR, "keys"))
 JWT_PRIVATE_KEY_PATH = os.path.join(keys_dir, "jwt_private_key.pem")
 JWT_PUBLIC_KEY_PATH = os.path.join(keys_dir, "jwt_public_key.pem")
 
