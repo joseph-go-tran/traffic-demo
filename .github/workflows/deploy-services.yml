@@ -80,7 +80,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "./user_service/docker-compose.yml"
-          target: "~/traffic_demo/user_service/"
+          target: "~/traffic_demo/"
 
       - name: Deploy to server
         if: github.ref == 'refs/heads/main'
