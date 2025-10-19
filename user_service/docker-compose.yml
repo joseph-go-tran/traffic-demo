@@ -27,7 +27,7 @@ services:
         ports:
             - 5432:5432
     redis:
-        image: redis:7.2.3-alpineư
+        image: redis:7.2.3-alpine
         volumes:
             - ./tmp/redis/data:/data
         ports:
