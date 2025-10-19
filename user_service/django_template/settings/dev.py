@@ -1,6 +1,6 @@
 from .base import *
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "152.42.219.180"]
 
 DEBUG = os.getenv("DEBUG", True)
 
