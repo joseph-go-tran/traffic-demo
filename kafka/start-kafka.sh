@@ -11,6 +11,7 @@ cd ..
 echo "⏳ Waiting for Kafka to be ready (30 seconds)..."
 sleep 30
 
+
 echo ""
 echo "✅ Kafka is ready!"
 echo ""
