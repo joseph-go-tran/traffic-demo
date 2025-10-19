@@ -81,7 +81,8 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /path/to/deployment/user_service
+            mkdir -p ~/traffic_demo/user_service
+            cd ~/traffic_demo/user_service
             docker compose pull
             docker compose up -d --force-recreate
             docker image prune -f
@@ -159,7 +160,8 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /path/to/deployment/notification_service
+            mkdir -p ~/traffic_demo/notification_service
+            cd ~/traffic_demo/notification_service
             docker compose pull
             docker compose up -d --force-recreate
             docker image prune -f
@@ -221,7 +223,8 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /path/to/deployment/routing_service
+            mkdir -p ~/traffic_demo/routing_service
+            cd ~/traffic_demo/routing_service
             docker compose pull
             docker compose up -d --force-recreate
             docker image prune -f
@@ -283,7 +286,8 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /path/to/deployment/traffic_service
+            mkdir -p ~/traffic_demo/traffic_service
+            cd ~/traffic_demo/traffic_service
             docker compose pull
             docker compose up -d --force-recreate
             docker image prune -f
@@ -363,7 +367,8 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /path/to/deployment/web_service
+            mkdir -p ~/traffic_demo/web_service
+            cd ~/traffic_demo/web_service
             docker compose pull
             docker compose up -d --force-recreate
             docker image prune -f
@@ -385,7 +390,8 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /path/to/deployment/kafka
+            mkdir -p ~/traffic_demo/kafka
+            cd ~/traffic_demo/kafka
             docker compose pull
             docker compose up -d --force-recreate
             docker image prune -f
