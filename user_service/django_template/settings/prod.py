@@ -59,7 +59,7 @@ LOGGING = {
     },
     "loggers": {
         "django": {
-            "handlers": ["console", "sentry"],
+            "handlers": ["console"],
             "propagate": True,
             "level": "INFO",
         },
@@ -72,12 +72,12 @@ CORS_ALLOW_CREDENTIALS = True
 
 # Production allowed origins - add your production domains here
 CORS_ALLOWED_ORIGINS = [
-    "https://yourdomain.com",
-    "https://www.yourdomain.com",
+    "https://joseph.works",
+    "https://www.joseph.works",
     # Add your production frontend URLs here
 ]
 
 # You can also use environment variables for production CORS origins
 CORS_ALLOWED_ORIGIN_REGEXES = [
-    r"^https://.*\.yourdomain\.com$",
+    r"^https://.*\.joseph\.works$",
 ]
