@@ -2,6 +2,8 @@ services:
     web:
         image: josephgotran/user-service:latest
         container_name: user_service
+        volumes:
+            - ./user_service/keys:/app/keys
         restart: always
         command: ./docker-entrypoint.sh -- python manage.py runserver 0.0.0.0:8000
         ports:
