@@ -10,6 +10,7 @@ RUN pip install --no-cache-dir -r requirements/dev.txt
 
 # copy docker-entrypoint.sh
 COPY ./docker-entrypoint.sh ./docker-entrypoint.sh
+COPY ./generate_secret_key.py ./generate_secret_key.py
 
 # copy project
 COPY . .
