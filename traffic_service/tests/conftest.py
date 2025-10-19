@@ -8,9 +8,9 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
+from traffic_service.app.api.v1.routes import traffic_incidents
 
 from app.api.v1.models import Base
-from traffic_service.app.api.v1.routes import traffic_incidents
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # this is to include backend dir in sys.path
@@ -21,7 +21,7 @@ config = dotenv_values(os.getcwd() + "/.env")
 SQLALCHEMY_DATABASE_URL = (
     f"postgresql+psycopg2://{config.get('DB_DEV_USER')}:"
     f"{config.get('DB_DEV_PASSWORD')}@{config.get('DB_DEV_HOST')}:"
-    f"{config.get('DB_DEV_PORT')}/{config.get('DB_DEV_NAME')}"
+    f"{config.get('DB_DEV_PORT')}/{config.get('DB_DEV_TRAFFIC_NAME')}"
 )
 
 

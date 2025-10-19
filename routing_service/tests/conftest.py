@@ -21,7 +21,7 @@ config = dotenv_values(os.getcwd() + "/.env")
 SQLALCHEMY_DATABASE_URL = (
     f"postgresql+psycopg2://{config.get('DB_DEV_USER')}:"
     f"{config.get('DB_DEV_PASSWORD')}@{config.get('DB_DEV_HOST')}:"
-    f"{config.get('DB_DEV_PORT')}/{config.get('DB_DEV_NAME')}"
+    f"{config.get('DB_DEV_PORT')}/{config.get('DB_DEV_ROUTING_NAME')}"
 )
 
 

@@ -1,0 +1,37 @@
+version: "3.7"
+
+services:
+  web:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+    networks:
+      - gos-network
+
+  # Development service (optional - for hot reload)
+  dev:
+    image: node:20-alpine
+    working_dir: /app
+    command: npm run dev
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://localhost:8000
+    profiles:
+      - dev
+    networks:
+      - gos-network
+
+networks:
+  gos-network:
+    external: true
+    name: gos-network

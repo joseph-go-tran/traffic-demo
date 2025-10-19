@@ -1,0 +1,391 @@
+name: Build and Deploy Services
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  detect-changes:
+    name: Detect Service Changes
+    runs-on: ubuntu-latest
+    outputs:
+      user_service: ${{ steps.filter.outputs.user_service }}
+      notification_service: ${{ steps.filter.outputs.notification_service }}
+      routing_service: ${{ steps.filter.outputs.routing_service }}
+      traffic_service: ${{ steps.filter.outputs.traffic_service }}
+      web_service: ${{ steps.filter.outputs.web_service }}
+      kafka: ${{ steps.filter.outputs.kafka }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            user_service:
+              - 'user_service/**'
+            notification_service:
+              - 'notification_service/**'
+            routing_service:
+              - 'routing_service/**'
+            traffic_service:
+              - 'traffic_service/**'
+            web_service:
+              - 'web_service/**'
+            kafka:
+              - 'kafka/**'
+
+  build-user-service:
+    name: Build and Deploy User Service
+    needs: detect-changes
+    if: needs.detect-changes.outputs.user_service == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./user_service
+          file: ./user_service/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/user-service:${{ github.sha }}
+            ${{ secrets.DOCKER_USERNAME }}/user-service:latest
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/user-service:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/user-service:buildcache,mode=max
+
+      - name: Deploy to server
+        if: github.ref == 'refs/heads/main'
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /path/to/deployment/user_service
+            docker-compose pull
+            docker-compose up -d --force-recreate
+            docker image prune -f
+
+  build-notification-service:
+    name: Build and Deploy Notification Service
+    needs: detect-changes
+    if: needs.detect-changes.outputs.notification_service == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: ./notification_service/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./notification_service
+        run: npm ci
+
+      - name: Build application
+        working-directory: ./notification_service
+        run: npm run build
+
+      # - name: Run tests
+      #   working-directory: ./notification_service
+      #   run: npm test
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Create Dockerfile if not exists
+        working-directory: ./notification_service
+        run: |
+          if [ ! -f Dockerfile ]; then
+            cat > Dockerfile << 'EOF'
+          FROM node:20-alpine
+          WORKDIR /usr/src/app
+          COPY package*.json ./
+          RUN npm ci --only=production
+          COPY . .
+          RUN npm run build
+          EXPOSE 3000
+          CMD ["npm", "run", "start:prod"]
+          EOF
+          fi
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./notification_service
+          file: ./notification_service/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/notification-service:${{ github.sha }}
+            ${{ secrets.DOCKER_USERNAME }}/notification-service:latest
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/notification-service:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/notification-service:buildcache,mode=max
+
+      - name: Deploy to server
+        if: github.ref == 'refs/heads/main'
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /path/to/deployment/notification_service
+            docker-compose pull
+            docker-compose up -d --force-recreate
+            docker image prune -f
+
+  build-routing-service:
+    name: Build and Deploy Routing Service
+    needs: detect-changes
+    if: needs.detect-changes.outputs.routing_service == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: ./routing_service/requirements.txt
+
+      - name: Install dependencies
+        working-directory: ./routing_service
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # - name: Run tests
+      #   working-directory: ./routing_service
+      #   run: |
+      #     pip install pytest pytest-asyncio
+      #     pytest tests/ -v
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./routing_service
+          file: ./routing_service/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/routing-service:${{ github.sha }}
+            ${{ secrets.DOCKER_USERNAME }}/routing-service:latest
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/routing-service:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/routing-service:buildcache,mode=max
+
+      - name: Deploy to server
+        if: github.ref == 'refs/heads/main'
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /path/to/deployment/routing_service
+            docker-compose pull
+            docker-compose up -d --force-recreate
+            docker image prune -f
+
+  build-traffic-service:
+    name: Build and Deploy Traffic Service
+    needs: detect-changes
+    if: needs.detect-changes.outputs.traffic_service == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: ./traffic_service/requirements.txt
+
+      - name: Install dependencies
+        working-directory: ./traffic_service
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # - name: Run tests
+      #   working-directory: ./traffic_service
+      #   run: |
+      #     pip install pytest pytest-asyncio
+      #     pytest tests/ -v
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./traffic_service
+          file: ./traffic_service/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/traffic-service:${{ github.sha }}
+            ${{ secrets.DOCKER_USERNAME }}/traffic-service:latest
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/traffic-service:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/traffic-service:buildcache,mode=max
+
+      - name: Deploy to server
+        if: github.ref == 'refs/heads/main'
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /path/to/deployment/traffic_service
+            docker-compose pull
+            docker-compose up -d --force-recreate
+            docker image prune -f
+
+  build-web-service:
+    name: Build and Deploy Web Service
+    needs: detect-changes
+    if: needs.detect-changes.outputs.web_service == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: ./web_service/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./web_service
+        run: npm ci
+
+      - name: Build application
+        working-directory: ./web_service
+        run: npm run build
+        env:
+          NODE_ENV: production
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Create Dockerfile if not exists
+        working-directory: ./web_service
+        run: |
+          if [ ! -f Dockerfile ]; then
+            cat > Dockerfile << 'EOF'
+          FROM node:20-alpine as build
+          WORKDIR /app
+          COPY package*.json ./
+          RUN npm ci
+          COPY . .
+          RUN npm run build
+
+          FROM nginx:alpine
+          COPY --from=build /app/dist /usr/share/nginx/html
+          COPY nginx.conf /etc/nginx/conf.d/default.conf
+          EXPOSE 80
+          CMD ["nginx", "-g", "daemon off;"]
+          EOF
+          fi
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./web_service
+          file: ./web_service/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/web-service:${{ github.sha }}
+            ${{ secrets.DOCKER_USERNAME }}/web-service:latest
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/web-service:buildcache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/web-service:buildcache,mode=max
+
+      - name: Deploy to server
+        if: github.ref == 'refs/heads/main'
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /path/to/deployment/web_service
+            docker-compose pull
+            docker-compose up -d --force-recreate
+            docker image prune -f
+
+  build-kafka:
+    name: Build and Deploy Kafka
+    needs: detect-changes
+    if: needs.detect-changes.outputs.kafka == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy Kafka to server
+        if: github.ref == 'refs/heads/main'
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /path/to/deployment/kafka
+            docker-compose pull
+            docker-compose up -d --force-recreate
+            docker image prune -f

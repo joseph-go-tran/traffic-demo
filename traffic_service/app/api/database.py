@@ -5,7 +5,7 @@ from sqlalchemy.orm import sessionmaker
 
 config = dotenv_values(".env")
 
-DB_DEV_NAME = config.get("DB_DEV_NAME", "traffic_db")
+DB_DEV_TRAFFIC_NAME = config.get("DB_DEV_TRAFFIC_NAME", "traffic_db")
 DB_DEV_USER = config.get("DB_DEV_USER", "admin")
 DB_DEV_PASSWORD = config.get("DB_DEV_PASSWORD", "")
 DB_DEV_HOST = config.get("DB_DEV_HOST", "localhost")
@@ -16,7 +16,7 @@ DATABASE_URL = (
     f"postgresql://{DB_DEV_USER}:"
     f"{DB_DEV_PASSWORD}@"
     f"{DB_DEV_HOST}:{DB_DEV_PORT}/"
-    f"{DB_DEV_NAME}"
+    f"{DB_DEV_TRAFFIC_NAME}"
 )
 
 engine = create_engine(

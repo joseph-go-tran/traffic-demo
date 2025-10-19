@@ -9,7 +9,7 @@ config = dotenv_values(".env")
 DATABASE_URL = (
     f"postgresql://{config.get('DB_DEV_USER')}:{config.get('DB_DEV_PASSWORD')}"
     f"@{config.get('DB_DEV_HOST')}:{config.get('DB_DEV_PORT')}"
-    f"/{config.get('DB_DEV_NAME')}"
+    f"/{config.get('DB_DEV_ROUTING_NAME')}"
 )
 
 # Create engine

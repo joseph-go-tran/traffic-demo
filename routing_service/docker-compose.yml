@@ -11,7 +11,7 @@ services:
         volumes:
             - .:/usr/src/app/
         environment:
-            - DB_DEV_NAME=${DB_DEV_NAME}
+            - DB_DEV_ROUTING_NAME=${DB_DEV_ROUTING_NAME}
             - DB_DEV_USER=${DB_DEV_USER}
             - DB_DEV_PASSWORD=${DB_DEV_PASSWORD}
             - DB_DEV_HOST=${DB_DEV_HOST}
@@ -27,7 +27,7 @@ services:
         environment:
             - POSTGRES_USER=${DB_DEV_USER}
             - POSTGRES_PASSWORD=${DB_DEV_PASSWORD}
-            - POSTGRES_DB=${DB_DEV_NAME}
+            - POSTGRES_DB=${DB_DEV_ROUTING_NAME}
             - POSTGRES_HOST_AUTH_METHOD=trust
         ports:
             - 5432:5432

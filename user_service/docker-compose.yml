@@ -22,7 +22,7 @@ services:
         environment:
             - POSTGRES_USER=${DB_DEV_USER}
             - POSTGRES_PASSWORD=${DB_DEV_PASSWORD}
-            - POSTGRES_DB=${DB_DEV_NAME}
+            - POSTGRES_DB=${DB_DEV_USER_NAME}
         ports:
             - 5432:5432
     redis:
@@ -31,33 +31,33 @@ services:
             - ./tmp/redis/data:/data
         ports:
             - 6379:6379
-    worker:
-        build: ./
-        entrypoint: celery
-        command: -A django_template worker --beat --scheduler django -l info -E
-        volumes:
-            - .:/app
-        environment:
-            - BROKER_URL=${BROKER_URL}
-            - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
-            - CELERY_CACHE_BACKEND=${CELERY_CACHE_BACKEND}
-        depends_on:
-            - db
-            - redis
-    flower:
-        build: ./
-        command: celery -A django_template flower
-        volumes:
-            - .:/data
-        working_dir: /data
-        ports:
-            - 5555:5555
-        environment:
-            - BROKER_URL=${BROKER_URL}
-            - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
-        depends_on:
-            - worker
-            - redis
+    # worker:
+    #     build: ./
+    #     entrypoint: celery
+    #     command: -A django_template worker --beat --scheduler django -l info -E
+    #     volumes:
+    #         - .:/app
+    #     environment:
+    #         - BROKER_URL=${BROKER_URL}
+    #         - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
+    #         - CELERY_CACHE_BACKEND=${CELERY_CACHE_BACKEND}
+    #     depends_on:
+    #         - db
+    #         - redis
+    # flower:
+    #     build: ./
+    #     command: celery -A django_template flower
+    #     volumes:
+    #         - .:/data
+    #     working_dir: /data
+    #     ports:
+    #         - 5555:5555
+    #     environment:
+    #         - BROKER_URL=${BROKER_URL}
+    #         - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
+    #     depends_on:
+    #         - worker
+    #         - redis
 
 volumes:
     django_template_db:
