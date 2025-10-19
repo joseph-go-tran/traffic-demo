@@ -15,7 +15,9 @@ def generate_rsa_keys():
     """Generate RSA private and public keys and save them to files."""
 
     # Create keys directory if it doesn't exist
-    keys_dir = os.path.join(os.path.dirname(__file__), "keys")
+    keys_dir = os.environ.get(
+        "JWT_KEYS_DIR", os.path.join(os.path.dirname(__file__), "keys")
+    )
     os.makedirs(keys_dir, exist_ok=True)
 
     private_key_path = os.path.join(keys_dir, "jwt_private_key.pem")
