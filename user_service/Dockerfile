@@ -15,4 +15,4 @@ COPY ./generate_rsa_keys.py ./generate_rsa_keys.py
 # copy project
 COPY . .
 
-RUN ["chmod", "+x", "./docker-entrypoint.sh"]
+RUN ["chmod", "+x", "./docker-entrypoint.sh", "./generate_rsa_keys.py"]
