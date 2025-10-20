@@ -20,6 +20,7 @@ services:
             - db
         networks:
             - traffic_net
+
     db:
         image: postgres:14-alpine
         container_name: db
