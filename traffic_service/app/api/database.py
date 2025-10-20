@@ -13,8 +13,8 @@ DB_PASSWORD = config.get("DB_DEV_PASSWORD") or os.getenv(
 )
 DB_HOST = config.get("DB_DEV_HOST") or os.getenv("DB_DEV_HOST", "db")
 DB_PORT = config.get("DB_DEV_PORT") or os.getenv("DB_DEV_PORT", "5432")
-DB_NAME = config.get("DB_DEV_ROUTING_NAME") or os.getenv(
-    "DB_DEV_ROUTING_NAME", "gos_routing"
+DB_NAME = config.get("DB_DEV_TRAFFIC_NAME") or os.getenv(
+    "DB_DEV_TRAFFIC_NAME", "gos_traffic"
 )
 
 DATABASE_URL = (
