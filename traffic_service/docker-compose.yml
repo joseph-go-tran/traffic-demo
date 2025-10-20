@@ -1,15 +1,10 @@
-version: "3.7"
-
 services:
     web:
-        build:
-            context: ./
-            dockerfile: Dockerfile
+        image: josephgotran/traffic-service:latest
+        container_name: traffic_service
+        restart: always
         command: >
             sh -c "./docker-entrypoint.sh && uvicorn main:app --reload"
-
-        volumes:
-            - .:/usr/src/app/
         environment:
             - DB_DEV_TRAFFIC_NAME=${DB_DEV_TRAFFIC_NAME}
             - DB_DEV_USER=${DB_DEV_USER}
