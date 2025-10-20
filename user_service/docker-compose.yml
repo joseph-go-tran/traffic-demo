@@ -20,6 +20,7 @@ services:
             - db
     db:
         image: postgres:14-alpine
+        container_name: db
         volumes:
             - django_template_db:/var/lib/postgresql/data
         environment:
