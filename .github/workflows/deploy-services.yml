@@ -257,6 +257,7 @@ jobs:
             DB_DEV_ROUTING_NAME=${{ vars.DB_DEV_ROUTING_NAME }}
             DB_DEV_HOST=${{ vars.DB_DEV_HOST }}
             DB_DEV_PORT=${{ vars.DB_DEV_PORT }}
+            TOMTOM_API_KEY=${{ vars.TOMTOM_API_KEY }}
             EOF
             docker compose pull
             docker compose up -d --force-recreate
