@@ -26,3 +26,7 @@ services:
 
 volumes:
     fast_api_template_db:
+
+networks:
+    traffic_net:
+        external: true
