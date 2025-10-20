@@ -13,24 +13,8 @@ services:
             - DB_DEV_PORT=${DB_DEV_PORT:-5432}
         ports:
             - 8001:8001
-        depends_on:
-            - db
         networks:
             - traffic_net
-
-    db:
-        image: postgres:14-alpine
-        volumes:
-            - fast_api_template_db:/var/lib/postgresql/data
-        environment:
-            - POSTGRES_USER=${DB_DEV_USER}
-            - POSTGRES_PASSWORD=${DB_DEV_PASSWORD}
-            - POSTGRES_DB=${DB_DEV_ROUTING_NAME}
-        networks:
-            - traffic_net
-
-volumes:
-    fast_api_template_db:
 
 networks:
     traffic_net:
