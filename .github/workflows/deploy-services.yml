@@ -255,6 +255,8 @@ jobs:
             DB_DEV_USER=${{ vars.DB_DEV_USER }}
             DB_DEV_PASSWORD=${{ vars.DB_DEV_PASSWORD }}
             DB_DEV_ROUTING_NAME=${{ vars.DB_DEV_ROUTING_NAME }}
+            DB_DEV_HOST=${{ vars.DB_DEV_HOST }}
+            DB_DEV_PORT=${{ vars.DB_DEV_PORT }}
             EOF
             docker compose pull
             docker compose up -d --force-recreate
