@@ -13,8 +13,6 @@ services:
             - DB_DEV_PORT=${DB_DEV_PORT}
         ports:
             - 8002:8002
-        depends_on:
-            - db
         networks:
             - traffic_net
 
