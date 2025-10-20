@@ -9,7 +9,7 @@ services:
             - DB_DEV_ROUTING_NAME=${DB_DEV_ROUTING_NAME:-gos_routing}
             - DB_DEV_USER=${DB_DEV_USER:-admin}
             - DB_DEV_PASSWORD=${DB_DEV_PASSWORD:-admin}
-            - DB_DEV_HOST=${DB_DEV_HOST:-db}
+            - DB_DEV_HOST=db
             - DB_DEV_PORT=${DB_DEV_PORT:-5432}
         ports:
             - 8001:8001
