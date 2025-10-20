@@ -1,3 +1,5 @@
+import os
+
 from dotenv import dotenv_values
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
@@ -5,18 +7,18 @@ from sqlalchemy.orm import sessionmaker
 
 config = dotenv_values(".env")
 
-DB_DEV_TRAFFIC_NAME = config.get("DB_DEV_TRAFFIC_NAME", "traffic_db")
-DB_DEV_USER = config.get("DB_DEV_USER", "admin")
-DB_DEV_PASSWORD = config.get("DB_DEV_PASSWORD", "")
-DB_DEV_HOST = config.get("DB_DEV_HOST", "localhost")
-DB_DEV_PORT = config.get("DB_DEV_PORT", 5432)
+DB_USER = config.get("DB_DEV_USER") or os.getenv("DB_DEV_USER", "admin")
+DB_PASSWORD = config.get("DB_DEV_PASSWORD") or os.getenv(
+    "DB_DEV_PASSWORD", "admin"
+)
+DB_HOST = config.get("DB_DEV_HOST") or os.getenv("DB_DEV_HOST", "db")
+DB_PORT = config.get("DB_DEV_PORT") or os.getenv("DB_DEV_PORT", "5432")
+DB_NAME = config.get("DB_DEV_ROUTING_NAME") or os.getenv(
+    "DB_DEV_ROUTING_NAME", "gos_routing"
+)
 
-# Database URL - using SQLite for simplicity, can be changed to PostgreSQL/MySQL
 DATABASE_URL = (
-    f"postgresql://{DB_DEV_USER}:"
-    f"{DB_DEV_PASSWORD}@"
-    f"{DB_DEV_HOST}:{DB_DEV_PORT}/"
-    f"{DB_DEV_TRAFFIC_NAME}"
+    f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 )
 
 engine = create_engine(

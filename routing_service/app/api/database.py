@@ -7,13 +7,6 @@ from sqlalchemy.orm import sessionmaker
 
 config = dotenv_values(".env")
 
-# # Database URL
-# DATABASE_URL = (
-#     f"postgresql://{config.get('DB_DEV_USER')}:{config.get('DB_DEV_PASSWORD')}"
-#     f"@{config.get('DB_DEV_HOST')}:{config.get('DB_DEV_PORT')}"
-#     f"/{config.get('DB_DEV_ROUTING_NAME')}"
-# )
-
 DB_USER = config.get("DB_DEV_USER") or os.getenv("DB_DEV_USER", "admin")
 DB_PASSWORD = config.get("DB_DEV_PASSWORD") or os.getenv(
     "DB_DEV_PASSWORD", "admin"
