@@ -231,6 +231,15 @@ jobs:
           cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/routing-service:buildcache
           cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/routing-service:buildcache,mode=max
 
+      - name: Copy docker-compose.yml and docker-entrypoint.sh to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "./routing_service/docker-compose.yml, ./routing_service/docker-entrypoint.sh"
+          target: "~/traffic_demo/"
+
       - name: Deploy to server
         if: github.ref == 'refs/heads/main'
         uses: appleboy/ssh-action@v1.0.0
@@ -241,6 +250,12 @@ jobs:
           script: |
             mkdir -p ~/traffic_demo/routing_service
             cd ~/traffic_demo/routing_service
+            cat > .env <<EOF
+            SECRET_KEY=${{ vars.SECRET_KEY }}
+            DB_DEV_USER=${{ vars.DB_DEV_USER }}
+            DB_DEV_PASSWORD=${{ vars.DB_DEV_PASSWORD }}
+            DB_DEV_ROUTING_NAME=${{ vars.DB_DEV_ROUTING_NAME }}
+            EOF
             docker compose pull
             docker compose up -d --force-recreate
             docker image prune -f
