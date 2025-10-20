@@ -8,7 +8,7 @@ done
 
 echo "PostgreSQL started"
 
-cd ./app
+cd /usr/src/app/app
 alembic upgrade head
 
 exec "$@"
