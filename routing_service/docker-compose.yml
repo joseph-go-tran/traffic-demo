@@ -15,6 +15,8 @@ services:
             - 8001:8001
         depends_on:
             - db
+        networks:
+            - traffic_net
     db:
         image: postgres:14-alpine
         volumes:
@@ -23,6 +25,8 @@ services:
             - POSTGRES_USER=${DB_DEV_USER}
             - POSTGRES_PASSWORD=${DB_DEV_PASSWORD}
             - POSTGRES_DB=${DB_DEV_ROUTING_NAME}
+        networks:
+            - traffic_net
 
 volumes:
     fast_api_template_db:
