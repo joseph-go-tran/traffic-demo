@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
@@ -57,7 +58,9 @@ class RouteResponse(BaseModel):
 
 class TomTomService:
     def __init__(self):
-        self.api_key = config.get("TOMTOM_API_KEY")
+        self.api_key = config.get("TOMTOM_API_KEY") or os.getenv(
+            "TOMTOM_API_KEY"
+        )
         self.base_url = "https://api.tomtom.com"
 
         if not self.api_key:
