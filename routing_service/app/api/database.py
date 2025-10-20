@@ -1,16 +1,29 @@
-from dotenv import dotenv_values
+import os
+
+# from dotenv import dotenv_values
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-config = dotenv_values(".env")
+# config = dotenv_values(".env")
 
-# Database URL
+# # Database URL
+# DATABASE_URL = (
+#     f"postgresql://{config.get('DB_DEV_USER')}:{config.get('DB_DEV_PASSWORD')}"
+#     f"@{config.get('DB_DEV_HOST')}:{config.get('DB_DEV_PORT')}"
+#     f"/{config.get('DB_DEV_ROUTING_NAME')}"
+# )
+
+DB_USER = os.getenv("DB_DEV_USER", "admin")
+DB_PASSWORD = os.getenv("DB_DEV_PASSWORD", "admin")
+DB_HOST = os.getenv("DB_DEV_HOST", "db")
+DB_PORT = os.getenv("DB_DEV_PORT", "5432")
+DB_NAME = os.getenv("DB_DEV_ROUTING_NAME", "gos_routing")
+
 DATABASE_URL = (
-    f"postgresql://{config.get('DB_DEV_USER')}:{config.get('DB_DEV_PASSWORD')}"
-    f"@{config.get('DB_DEV_HOST')}:{config.get('DB_DEV_PORT')}"
-    f"/{config.get('DB_DEV_ROUTING_NAME')}"
+    f"postgresql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 )
+
 
 # Create engine
 engine = create_engine(DATABASE_URL, pool_pre_ping=True, echo=False)
