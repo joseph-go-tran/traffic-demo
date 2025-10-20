@@ -1,10 +1,8 @@
-version: "3.7"
-
 services:
     web:
-        build:
-            context: ./
-            dockerfile: Dockerfile
+        image: josephgotran/routing-service:latest
+        container_name: routing_service
+        restart: always
         command: >
             sh -c "./docker-entrypoint.sh && uvicorn main:app --reload"
 
