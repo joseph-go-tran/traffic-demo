@@ -172,6 +172,7 @@ jobs:
             mkdir -p ~/traffic_demo/notification_service
             cd ~/traffic_demo/notification_service
             cat > .env <<EOF
+            DB_TYPE=${{ vars.DB_TYPE }}
             DB_HOST=${{ vars.DB_HOST }}
             DB_PORT=${{ vars.DB_PORT }}
             DB_NAME=${{ vars.DB_NAME }}
