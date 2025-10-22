@@ -3,8 +3,6 @@ services:
     image: josephgotran/notification-service:latest
     container_name: notification_service
     restart: always
-    command: >
-      sh -c "./docker-entrypoint.sh && uvicorn main:app --reload"
     environment:
       - DYNAMODB_ENDPOINT=${DYNAMODB_ENDPOINT:-http://dynamodb-local:5433}
       - DYNAMODB_REGION=${DYNAMODB_REGION:-us-west-2}

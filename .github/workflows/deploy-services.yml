@@ -140,22 +140,6 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Create Dockerfile if not exists
-        working-directory: ./notification_service
-        run: |
-          if [ ! -f Dockerfile ]; then
-            cat > Dockerfile << 'EOF'
-          FROM node:20-alpine
-          WORKDIR /usr/src/app
-          COPY package*.json ./
-          RUN npm ci --only=production
-          COPY . .
-          RUN npm run build
-          EXPOSE 3000
-          CMD ["npm", "run", "start:prod"]
-          EOF
-          fi
-
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
@@ -168,6 +152,15 @@ jobs:
           cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/notification-service:buildcache
           cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/notification-service:buildcache,mode=max
 
+      - name: Copy docker-compose.yml to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "./notification_service/docker-compose.yml"
+          target: "~/traffic_demo/"
+
       - name: Deploy to server
         if: github.ref == 'refs/heads/main'
         uses: appleboy/ssh-action@v1.0.0
@@ -178,6 +171,21 @@ jobs:
           script: |
             mkdir -p ~/traffic_demo/notification_service
             cd ~/traffic_demo/notification_service
+            cat > .env <<EOF
+            DB_HOST=${{ vars.DB_HOST }}
+            DB_PORT=${{ vars.DB_PORT }}
+            DB_NAME=${{ vars.DB_NAME }}
+            DB_USERNAME=${{ vars.DB_USERNAME }}
+            DB_PASSWORD=${{ vars.DB_PASSWORD }}
+            JWT_SECRET=${{ vars.JWT_SECRET }}
+            JWT_REFRESH_SECRET=${{ vars.JWT_REFRESH_SECRET }}
+            KAFKA_BROKER=${{ vars.KAFKA_BROKER }}
+            DYNAMODB_ENDPOINT=${{ vars.DYNAMODB_ENDPOINT }}
+            DYNAMODB_REGION=${{ vars.DYNAMODB_REGION }}
+            DYNAMODB_ACCESS_KEY_ID=${{ vars.DYNAMODB_ACCESS_KEY_ID }}
+            DYNAMODB_SECRET_ACCESS_KEY=${{ vars.DYNAMODB_SECRET_ACCESS_KEY }}
+            DYNAMODB_TABLE_NAME=${{ vars.DYNAMODB_TABLE_NAME }}
+            EOF
             docker compose pull
             docker compose up -d --force-recreate
             docker image prune -f
