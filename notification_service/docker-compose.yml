@@ -1,15 +1,55 @@
-version: "3.8"
 services:
-  postgres:
-    container_name: basic-nestjs-template
-    image: postgres:latest
+  noti-service:
+    image: josephgotran/notification-service:latest
+    container_name: notification_service
+    restart: always
+    command: >
+      sh -c "./docker-entrypoint.sh && uvicorn main:app --reload"
+    environment:
+      - DYNAMODB_ENDPOINT=${DYNAMODB_ENDPOINT:-http://dynamodb-local:5433}
+      - DYNAMODB_REGION=${DYNAMODB_REGION:-us-west-2}
+      - DYNAMODB_ACCESS_KEY_ID=${DYNAMODB_ACCESS_KEY_ID}
+      - DYNAMODB_SECRET_ACCESS_KEY=${DYNAMODB_SECRET_ACCESS_KEY}
+      - DYNAMODB_TABLE_NAME=${DYNAMODB_TABLE_NAME}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${DB_NAME}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - KAFKA_BROKER=${KAFKA_BROKER}
     ports:
-      - "5432:5432"
-    env_file:
-      - docker.env
+      - 3000:3000
+    depends_on:
+      - dynamodb-local
     networks:
-      - postgres
+      - traffic_net
+
+  dynamodb-local:
+    container_name: dynamodb-local
+    image: amazon/dynamodb-local:latest
+    ports:
+      - "5433:5433"
+    command: "-jar DynamoDBLocal.jar -sharedDb -dbPath ./data"
+    volumes:
+      - ./dynamodb-data:/home/dynamodblocal/data
+    working_dir: /home/dynamodblocal
+    networks:
+      - traffic_net
+
+  dynamodb-admin:
+    image: aaronshaf/dynamodb-admin
+    container_name: dynamodb-admin
+    ports:
+      - "5555:8001"
+    environment:
+      DYNAMO_ENDPOINT: http://host.docker.internal:5433
+    depends_on:
+      - dynamodb-local
+    networks:
+      - traffic_net
 
 networks:
-    postgres:
+    traffic_net:
         external: true

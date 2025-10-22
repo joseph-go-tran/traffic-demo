@@ -1,6 +1,7 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { KafkaService } from './kafka.service';
 import { NotificationGateway } from '../api/notification/notification.gateway';
+import { DynamoDBService } from '@/database/dynamodb.service';
 
 interface TrafficReportPayload {
   reportId: string;
@@ -32,6 +33,7 @@ export class TrafficReportConsumer implements OnModuleInit {
   constructor(
     private readonly kafkaService: KafkaService,
     private readonly notificationGateway: NotificationGateway,
+    private readonly dynamoDBService: DynamoDBService,
   ) {}
 
   async onModuleInit() {
@@ -72,13 +74,20 @@ export class TrafficReportConsumer implements OnModuleInit {
       };
 
       // Send notification to all clients subscribed to traffic-alerts channel
-      this.notificationGateway.sendNotificationToChannel(
-        'traffic-alerts',
-        notification,
-      );
+      const channel = 'traffic-alerts';
+      this.notificationGateway.sendNotificationToChannel(channel, notification);
       this.logger.log(
         `Traffic notification sent for report: ${report.reportId}`,
       );
+      // Save to DynamoDB
+      await this.dynamoDBService.saveNotification({
+        type: notification.type,
+        title: notification.title,
+        message: notification.message,
+        data: notification.data,
+        recipient: channel,
+        recipientType: 'channel',
+      });
 
       // If there are specific affected users, send personalized notifications
       if (report.affectedUsers && report.affectedUsers.length > 0) {

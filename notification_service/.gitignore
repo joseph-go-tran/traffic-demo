@@ -3,6 +3,9 @@
 /node_modules
 /postgresql
 
+# DynamoDB Local data
+/dynamodb-data
+
 # Logs
 logs
 *.log

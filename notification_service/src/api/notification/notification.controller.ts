@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Get, Param } from '@nestjs/common';
+import { Controller, Post, Body, Get, Param, Query } from '@nestjs/common';
 import { NotificationService } from './notification.service';
 
 @Controller('notifications')
@@ -49,5 +49,32 @@ export class NotificationController {
   @Get('stats')
   getStats() {
     return this.notificationService.getStats();
+  }
+
+  @Get('history')
+  async getHistory(
+    @Query('recipientType') recipientType?: 'user' | 'channel' | 'all',
+    @Query('recipient') recipient?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const limitNumber = limit ? parseInt(limit, 10) : 50;
+    return this.notificationService.getHistory(
+      recipientType,
+      recipient,
+      limitNumber,
+    );
+  }
+
+  @Get('history/:recipient')
+  async getHistoryByRecipient(
+    @Param('recipient') recipient: string,
+    @Query('limit') limit?: string,
+  ) {
+    const limitNumber = limit ? parseInt(limit, 10) : 50;
+    return this.notificationService.getHistory(
+      undefined,
+      recipient,
+      limitNumber,
+    );
   }
 }
