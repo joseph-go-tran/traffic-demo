@@ -24,6 +24,7 @@ services:
       - dynamodb-local
     networks:
       - traffic_net
+      - kafka-network
 
   dynamodb-local:
     container_name: dynamodb-local
