@@ -455,7 +455,7 @@ jobs:
             cd ~/traffic_demo/kafka
             docker compose up -d
 
-  build-gateway:
+  clone-gateway:
     name: Build and Deploy Gateway
     needs: detect-changes
     if: needs.detect-changes.outputs.gateway == 'true'
