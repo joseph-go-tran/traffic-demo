@@ -491,8 +491,8 @@ export default function NavigationPage({ routeId: routeIdProp }: NavigationPageP
     });
 
     // Refresh incidents list when new traffic reports arrive
-    refreshIncidents();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // refreshIncidents();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [notifications, currentPosition, latitude, longitude]);
 
   // Helper function to map incident types

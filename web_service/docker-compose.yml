@@ -2,16 +2,15 @@ version: "3.7"
 
 services:
   web:
-    build:
-      context: ./
-      dockerfile: Dockerfile
+    image: josephgotran/web-service:latest
+    container_name: web_service
     ports:
       - "3000:80"
     environment:
       - NODE_ENV=production
     restart: unless-stopped
     networks:
-      - gos-network
+      - traffic_net
 
   # Development service (optional - for hot reload)
   dev:
@@ -29,9 +28,8 @@ services:
     profiles:
       - dev
     networks:
-      - gos-network
+      - traffic_net
 
 networks:
-  gos-network:
-    external: true
-    name: gos-network
+    traffic_net:
+        external: true

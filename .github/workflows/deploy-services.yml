@@ -387,26 +387,6 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Create Dockerfile if not exists
-        working-directory: ./web_service
-        run: |
-          if [ ! -f Dockerfile ]; then
-            cat > Dockerfile << 'EOF'
-          FROM node:20-alpine as build
-          WORKDIR /app
-          COPY package*.json ./
-          RUN npm ci
-          COPY . .
-          RUN npm run build
-
-          FROM nginx:alpine
-          COPY --from=build /app/dist /usr/share/nginx/html
-          COPY nginx.conf /etc/nginx/conf.d/default.conf
-          EXPOSE 80
-          CMD ["nginx", "-g", "daemon off;"]
-          EOF
-          fi
-
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
@@ -418,6 +398,15 @@ jobs:
             ${{ secrets.DOCKER_USERNAME }}/web-service:latest
           cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/web-service:buildcache
           cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/web-service:buildcache,mode=max
+
+      - name: Copy docker-compose.yml and docker-entrypoint.sh app to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "./web_service/docker-compose.yml, ./web_service/docker-entrypoint.sh"
+          target: "~/traffic_demo/"
 
       - name: Deploy to server
         if: github.ref == 'refs/heads/main'

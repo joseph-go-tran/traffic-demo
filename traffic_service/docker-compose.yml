@@ -15,7 +15,10 @@ services:
             - 8002:8002
         networks:
             - traffic_net
+            - kafka-network
 
 networks:
     traffic_net:
+        external: true
+    kafka-network:
         external: true
