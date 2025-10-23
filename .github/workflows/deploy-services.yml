@@ -21,6 +21,7 @@ jobs:
       traffic_service: ${{ steps.filter.outputs.traffic_service }}
       web_service: ${{ steps.filter.outputs.web_service }}
       kafka: ${{ steps.filter.outputs.kafka }}
+      gateway: ${{ steps.filter.outputs.gateway }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -42,6 +43,8 @@ jobs:
               - 'web_service/**'
             kafka:
               - 'kafka/**'
+            gateway:
+              - 'gateway/**'
 
   build-user-service:
     name: Build and Deploy User Service
@@ -451,3 +454,21 @@ jobs:
             mkdir -p ~/traffic_demo/kafka
             cd ~/traffic_demo/kafka
             docker compose up -d
+
+  build-gateway:
+    name: Build and Deploy Gateway
+    needs: detect-changes
+    if: needs.detect-changes.outputs.gateway == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Copy gateway files to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "./gateway"
+          target: "~/traffic_demo/"

@@ -41,11 +41,6 @@ certificatesResolvers:
       storage: acme.json
       httpChallenge:
         entryPoint: web
-      dnsChallenge:
-        provider: cloudflare
-        resolvers:
-          - darl.ns.cloudflare.com:53
-          - melina.ns.cloudflare.com:53
 
   buypass:
     acme:

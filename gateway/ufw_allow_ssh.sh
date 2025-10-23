@@ -1,3 +1,3 @@
 #!/bin/bash
 
-ufw allow 24700
+ufw allow {SSH_PORT}

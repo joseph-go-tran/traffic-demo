@@ -20,7 +20,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.services.traefik-secure.loadbalancer.server.port=8080"
-      - "traefik.http.routers.traefik-secure.rule=Host(`gateway.ekila.vn`)"
+      - "traefik.http.routers.traefik-secure.rule=Host(`{API_GATEWAY_DOMAIN}`)"
       - "traefik.http.routers.traefik-secure.entrypoints=websecure"
       - "traefik.http.routers.traefik-secure.service=api@internal"
       - "traefik.http.routers.traefik-secure.middlewares=user-auth@file"
@@ -28,17 +28,18 @@ services:
       - path: ./.env
         required: true
     
-  fail2ban:
-    image: crazymax/fail2ban:latest
-    network_mode: host
-    cap_add:
-      - NET_ADMIN
-      - NET_RAW
-    environment:
-      - TZ=Asia/Ho_Chi_Minh
-    volumes:
-      - ./logs:/var/log/traefik:ro
-      - ./fail2ban/data:/data
+  # fail2ban:
+  #   image: crazymax/fail2ban:latest
+  #   network_mode: host
+  #   cap_add:
+  #     - NET_ADMIN
+  #     - NET_RAW
+  #   environment:
+  #     - TZ=Asia/Ho_Chi_Minh
+  #   volumes:
+  #     - ./logs:/var/log/traefik:ro
+  #     - ./fail2ban/data:/data
+
   # prometheus:
   #   image: prom/prometheus:latest
   #   command:
@@ -82,7 +83,7 @@ services:
     depends_on:
       - influxdb
     #$(stat -c '%g' /var/run/docker.sock)
-    user: 1000:999
+    user: 1000:{docker_socket_gid}
     volumes:
       - ./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
       - /:/hostfs:ro
@@ -136,22 +137,17 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.services.grafana.loadbalancer.server.port=3000"
-      - "traefik.http.routers.grafana.rule=Host(`grafana.ekila.vn`)"
+      - "traefik.http.routers.grafana.rule=Host(`{API_GRAFANA_DOMAIN}`)"
       - "traefik.http.routers.grafana.entrypoints=websecure"
     depends_on:
       - influxdb
       - loki
     environment:
-      GF_SECURITY_DISABLE_INITIAL_ADMIN_CREATION: "true"
+      GF_SECURITY_DISABLE_INITIAL_ADMIN_CREATION: "false"
       GF_INSTALL_PLUGINS: grafana-piechart-panel
 
 networks:
   infrastructure_net:
     name: infrastructure_net
-    driver: bridge
-    attachable: true
-
-  proxy:
-    name: proxy
     driver: bridge
     attachable: true

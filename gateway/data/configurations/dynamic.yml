@@ -1,24 +1,6 @@
 # Dynamic configuration
 http:
-  services:
-    dummy:
-      loadBalancer:
-        servers:
-          - url: "http://127.0.0.1:80"
-  routers:
-    main:
-      rule: "Host(`ekila.vn`)"
-      entryPoints:
-        - web
-      middlewares:
-        - redirect-to-www
-      service: dummy
   middlewares:
-    redirect-to-www:
-      redirectRegex:
-        regex: "^https?://ekila.vn(.*)"
-        replacement: "http://www.ekila.vn$1"
-        permanent: true
     nofloc:
       headers:
         customResponseHeaders:
