@@ -5,7 +5,7 @@ services:
     image: josephgotran/web-service:latest
     container_name: web_service
     ports:
-      - "3000:80"
+      - "5173:80"
     environment:
       - NODE_ENV=production
     restart: unless-stopped
