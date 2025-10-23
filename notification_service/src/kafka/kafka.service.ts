@@ -14,9 +14,10 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(KafkaService.name);
 
   constructor() {
+    const kafkaBroker = process.env.KAFKA_BROKER || 'kafka:29092';
     this.kafka = new Kafka({
       clientId: 'notification-service',
-      brokers: ['kafka:29092'],
+      brokers: [kafkaBroker],
       retry: {
         initialRetryTime: 300,
         retries: 10,
@@ -24,6 +25,7 @@ export class KafkaService implements OnModuleInit, OnModuleDestroy {
     });
 
     this.producer = this.kafka.producer();
+    this.logger.log(`Kafka initialized with broker: ${kafkaBroker}`);
   }
 
   async onModuleInit() {
