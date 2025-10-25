@@ -25,7 +25,6 @@ services:
       - "traefik.http.services.traefik-secure.loadbalancer.server.port=8080"
       - "traefik.http.routers.traefik-secure.rule=Host(`api.joseph.works`)"
       - "traefik.http.routers.traefik-secure.entrypoints=websecure"
-      - "traefik.http.routers.traefik-secure.tls.certresolver=letsencrypt"
       - "traefik.http.routers.traefik-secure.service=api@internal"
       - "traefik.http.routers.traefik-secure.middlewares=user-auth@file"
     env_file:
