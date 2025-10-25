@@ -5,10 +5,10 @@ services:
     image: josephgotran/web-service:latest
     container_name: web_service
     ports:
-      - "80"
+      - "5731:80"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.services.web.loadbalancer.server.port=80"
+      - "traefik.http.services.web.loadbalancer.server.port=5731"
       - "traefik.http.routers.web.rule=Host(`joseph.works`)"
       - "traefik.http.routers.web.entrypoints=websecure"
       - "traefik.http.routers.web.tls.certresolver=letsencrypt"
