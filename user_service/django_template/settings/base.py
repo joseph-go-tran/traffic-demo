@@ -260,3 +260,6 @@ CORS_ALLOW_METHODS = [
 
 # Preflight request cache time
 CORS_PREFLIGHT_MAX_AGE = 3600
+
+FORCE_SCRIPT_NAME = "/users"
+USE_X_FORWARDED_HOST = True
