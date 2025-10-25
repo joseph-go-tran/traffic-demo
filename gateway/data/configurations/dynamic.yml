@@ -24,7 +24,7 @@ http:
     user-auth:
       basicAuth:
         users:
-          - ekila:$apr1$TW/CD4tX$f8TywIA5kT7YbTfg1xYYh1
+          - admin:$apr1$TW/CD4tX$f8TywIA5kT7YbTfg1xYYh1
 
 tls:
   options:
