@@ -17,6 +17,9 @@ services:
       - ./data/acme.json:/acme.json
       - ./data/configurations:/configurations
       - ./logs/:/logs/
+    command:
+      - "--ping=true"
+      - "--ping.entrypoint=traefik"
     labels:
       - "traefik.enable=true"
       - "traefik.http.services.traefik-secure.loadbalancer.server.port=8080"

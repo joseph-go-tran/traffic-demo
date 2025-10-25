@@ -4,8 +4,6 @@ services:
   web:
     image: josephgotran/web-service:latest
     container_name: web_service
-    ports:
-      - "5731:80"
     labels:
       - "traefik.enable=true"
       - "traefik.http.services.web.loadbalancer.server.port=80"
