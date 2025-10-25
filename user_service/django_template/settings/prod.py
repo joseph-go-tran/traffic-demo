@@ -3,7 +3,13 @@ from sentry_sdk.integrations.django import DjangoIntegration
 
 from .base import *
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "joseph.works", "152.42.219.180"]
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    "joseph.works",
+    "152.42.219.180",
+    "api.joseph.works",
+]
 
 DEBUG = os.getenv("DEBUG", False)
 
@@ -74,6 +80,7 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     "https://joseph.works",
     "https://www.joseph.works",
+    "https://api.joseph.works",
     # Add your production frontend URLs here
 ]
 

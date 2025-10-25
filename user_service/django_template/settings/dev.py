@@ -1,6 +1,6 @@
 from .base import *
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "152.42.219.180"]
+ALLOWED_HOSTS = ["localhost", "127.0.0.1", "152.42.219.180", "api.joseph.works"]
 
 DEBUG = os.getenv("DEBUG", True)
 
@@ -73,4 +73,5 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:8080",
     "http://localhost:4200",  # Angular default
     "http://127.0.0.1:4200",
+    "http://api.joseph.works",
 ]
