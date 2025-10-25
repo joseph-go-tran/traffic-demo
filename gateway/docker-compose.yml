@@ -5,7 +5,7 @@ services:
     restart: always
     security_opt:
       - no-new-privileges:true
-    network_mode: host
+    # network_mode: host
     ports:
       - 80:80
       - 443:443
@@ -27,6 +27,8 @@ services:
     env_file:
       - path: ./.env
         required: true
+    networks:
+      - traffic_net
 
   # fail2ban:
   #   image: crazymax/fail2ban:latest
@@ -151,3 +153,5 @@ networks:
     name: infrastructure_net
     driver: bridge
     attachable: true
+  traffic_net:
+    external: true
