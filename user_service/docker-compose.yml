@@ -1,13 +1,19 @@
 services:
-    web:
+    user:
         image: josephgotran/user-service:latest
         container_name: user_service
         volumes:
             - /root/traffic_demo/user_service/keys:/app/keys
         restart: always
         command: ./docker-entrypoint.sh -- python manage.py runserver 0.0.0.0:8000
-        ports:
-            - "8000:8000"
+        labels:
+            - "traefik.enable=true"
+            - "traefik.http.services.user.loadbalancer.server.port=8000"
+            - "traefik.http.routers.user.rule=Host(`api.joseph.works`) && PathPrefix(`/users`)"
+            - "traefik.http.routers.user.entrypoints=websecure"
+            - "traefik.http.routers.user.tls.certresolver=letsencrypt"
+            - "traefik.http.middlewares.user-strip-prefix.stripprefix.prefixes=/users"
+            - "traefik.http.routers.user.middlewares=user-strip-prefix@docker"
         environment:
             - JWT_KEYS_DIR=/app/keys
             - SECRET_KEY=${SECRET_KEY}
