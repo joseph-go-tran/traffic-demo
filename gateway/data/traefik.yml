@@ -17,8 +17,7 @@ entryPoints:
       middlewares:
         - secureHeaders@file
         - nofloc@file
-      tls:
-        certResolver: letsencrypt
+      tls: {}
 
   postgres:
     address: :5432
@@ -33,22 +32,22 @@ providers:
   file:
     filename: /configurations/dynamic.yml
 
-certificatesResolvers:
-  letsencrypt:
-    acme:
-      # caServer: "https://acme-staging-v02.api.letsencrypt.org/directory"
-      email: admin@ekila.vn
-      storage: /acme.json
-      httpChallenge:
-        entryPoint: web
+# certificatesResolvers:
+#   letsencrypt:
+#     acme:
+#       # caServer: "https://acme-staging-v02.api.letsencrypt.org/directory"
+#       email: admin@ekila.vn
+#       storage: /acme.json
+#       httpChallenge:
+#         entryPoint: web
 
-  buypass:
-    acme:
-      email: admin@ekila.vn
-      storage: acme.json
-      caServer: https://api.buypass.com/acme/directory
-      httpChallenge:
-        entryPoint: web
+#   buypass:
+#     acme:
+#       email: admin@ekila.vn
+#       storage: acme.json
+#       caServer: https://api.buypass.com/acme/directory
+#       httpChallenge:
+#         entryPoint: web
 
 log:
   level: INFO
