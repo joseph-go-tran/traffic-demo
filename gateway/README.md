@@ -34,5 +34,5 @@ docker compose up -d
 ```
 
 ***`To test the gateway really work after running:`***
-- access to your gateway domain (default account: ekila/Ekila@10724)
+- access to your gateway domain (default account: admin/Ekila@10724)
 - access to grafana domain (default account: admin/admin)
