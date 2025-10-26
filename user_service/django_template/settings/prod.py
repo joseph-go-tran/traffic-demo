@@ -11,7 +11,7 @@ ALLOWED_HOSTS = [
     "api.joseph.works",
 ]
 
-DEBUG = os.getenv("DEBUG", True)
+DEBUG = os.getenv("DEBUG", False)
 
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
