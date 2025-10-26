@@ -13,6 +13,7 @@ ALLOWED_HOSTS = [
 
 DEBUG = os.getenv("DEBUG", False)
 
+STATIC_URL = "/users/static/"
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
 # Database

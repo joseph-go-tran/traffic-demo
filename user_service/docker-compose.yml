@@ -14,6 +14,10 @@ services:
             - "traefik.http.routers.user.tls.certresolver=letsencrypt"
             - "traefik.http.middlewares.user-strip-prefix.stripprefix.prefixes=/users"
             - "traefik.http.routers.user.middlewares=user-strip-prefix@docker"
+            - "traefik.http.routers.user-static.rule=Host(`api.joseph.works`) && PathPrefix(`/users/static`)"
+            - "traefik.http.routers.user-static.entrypoints=websecure"
+            - "traefik.http.routers.user-static.tls.certresolver=letsencrypt"
+            - "traefik.http.services.user-static.loadbalancer.server.port=8000"
         environment:
             - JWT_KEYS_DIR=/app/keys
             - SECRET_KEY=${SECRET_KEY}
