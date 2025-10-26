@@ -32,6 +32,7 @@ services:
         required: true
     networks:
       - traffic_net
+      - infrastructure_net
 
   # fail2ban:
   #   image: crazymax/fail2ban:latest
