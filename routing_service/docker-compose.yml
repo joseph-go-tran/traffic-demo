@@ -4,7 +4,7 @@ services:
         container_name: routing_service
         restart: always
         command: >
-            sh -c "./docker-entrypoint.sh && uvicorn main:app --reload"
+            sh -c "./docker-entrypoint.sh && uvicorn main:app --host 0.0.0.0 --port 8001"
         environment:
             - DB_DEV_ROUTING_NAME=${DB_DEV_ROUTING_NAME:-gos_routing}
             - DB_DEV_USER=${DB_DEV_USER:-admin}
