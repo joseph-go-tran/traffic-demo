@@ -20,6 +20,15 @@ services:
       - KAFKA_BROKER=${KAFKA_BROKER:-kafka:29092}
     ports:
       - 3000:3000
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traffic_net"
+      - "traefik.http.services.noti-service.loadbalancer.server.port=3000"
+      - "traefik.http.routers.noti-service.rule=Host(`api.joseph.works`) && PathPrefix(`/notifications`)"
+      - "traefik.http.routers.noti-service.entrypoints=websecure"
+      - "traefik.http.routers.noti-service.tls.certresolver=letsencrypt"
+      - "traefik.http.middlewares.noti-service-strip-prefix.stripprefix.prefixes=/notifications"
+      - "traefik.http.routers.noti-service.middlewares=noti-service-strip-prefix@docker"
     depends_on:
       - dynamodb-local
     networks:
