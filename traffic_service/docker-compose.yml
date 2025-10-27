@@ -13,6 +13,7 @@ services:
             - DB_DEV_PORT=${DB_DEV_PORT}
         labels:
             - "traefik.enable=true"
+            - "traefik.docker.network=traffic_net"
             - "traefik.http.services.traffic.loadbalancer.server.port=8002"
             - "traefik.http.routers.traffic.rule=Host(`api.joseph.works`) && PathPrefix(`/traffic`)"
             - "traefik.http.routers.traffic.entrypoints=websecure"
