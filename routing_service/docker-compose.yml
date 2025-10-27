@@ -14,6 +14,14 @@ services:
             - TOMTOM_API_KEY=${TOMTOM_API_KEY}
         ports:
             - 8001:8001
+        labels:
+            - "traefik.enable=true"
+            - "traefik.http.services.user.loadbalancer.server.port=8000"
+            - "traefik.http.routers.user.rule=Host(`api.joseph.works`) && PathPrefix(`/routing`)"
+            - "traefik.http.routers.user.entrypoints=websecure"
+            - "traefik.http.routers.user.tls.certresolver=letsencrypt"
+            - "traefik.http.middlewares.user-strip-prefix.stripprefix.prefixes=/users"
+            - "traefik.http.routers.user.middlewares=user-strip-prefix@docker"
         networks:
             - traffic_net
 
