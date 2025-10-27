@@ -1,5 +1,5 @@
 services:
-    web:
+    routing:
         image: josephgotran/routing-service:latest
         container_name: routing_service
         restart: always
@@ -16,12 +16,12 @@ services:
             - 8001:8001
         labels:
             - "traefik.enable=true"
-            - "traefik.http.services.user.loadbalancer.server.port=8000"
-            - "traefik.http.routers.user.rule=Host(`api.joseph.works`) && PathPrefix(`/routing`)"
-            - "traefik.http.routers.user.entrypoints=websecure"
-            - "traefik.http.routers.user.tls.certresolver=letsencrypt"
-            - "traefik.http.middlewares.user-strip-prefix.stripprefix.prefixes=/users"
-            - "traefik.http.routers.user.middlewares=user-strip-prefix@docker"
+            - "traefik.http.services.routing.loadbalancer.server.port=8000"
+            - "traefik.http.routers.routing.rule=Host(`api.joseph.works`) && PathPrefix(`/routing`)"
+            - "traefik.http.routers.routing.entrypoints=websecure"
+            - "traefik.http.routers.routing.tls.certresolver=letsencrypt"
+            - "traefik.http.middlewares.routing-strip-prefix.stripprefix.prefixes=/routing"
+            - "traefik.http.routers.routing.middlewares=routing-strip-prefix@docker"
         networks:
             - traffic_net
 
