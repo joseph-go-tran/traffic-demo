@@ -3,8 +3,7 @@ services:
         image: josephgotran/routing-service:latest
         container_name: routing_service
         restart: always
-        command: >
-            sh -c "./docker-entrypoint.sh && uvicorn main:app --host 0.0.0.0 --port 8001"
+        command: uvicorn main:app --host 0.0.0.0 --port 8001
         environment:
             - DB_DEV_ROUTING_NAME=${DB_DEV_ROUTING_NAME:-gos_routing}
             - DB_DEV_USER=${DB_DEV_USER:-admin}
@@ -12,8 +11,6 @@ services:
             - DB_DEV_HOST=${DB_DEV_HOST:-db}
             - DB_DEV_PORT=${DB_DEV_PORT:-5432}
             - TOMTOM_API_KEY=${TOMTOM_API_KEY}
-        ports:
-            - 8001:8001
         labels:
             - "traefik.enable=true"
             - "traefik.http.services.routing.loadbalancer.server.port=8001"
