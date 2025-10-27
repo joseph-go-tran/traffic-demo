@@ -1,18 +1,24 @@
 services:
-    web:
+    traffic:
         image: josephgotran/traffic-service:latest
         container_name: traffic_service
         restart: always
         command: >
-            sh -c "./docker-entrypoint.sh && uvicorn main:app --reload"
+            sh -c "./docker-entrypoint.sh && uvicorn main:app --host 0.0.0.0 --port 8002"
         environment:
             - DB_DEV_TRAFFIC_NAME=${DB_DEV_TRAFFIC_NAME}
             - DB_DEV_USER=${DB_DEV_USER}
             - DB_DEV_PASSWORD=${DB_DEV_PASSWORD}
             - DB_DEV_HOST=${DB_DEV_HOST}
             - DB_DEV_PORT=${DB_DEV_PORT}
-        ports:
-            - 8002:8002
+        labels:
+            - "traefik.enable=true"
+            - "traefik.http.services.traffic.loadbalancer.server.port=8002"
+            - "traefik.http.routers.traffic.rule=Host(`api.joseph.works`) && PathPrefix(`/traffic`)"
+            - "traefik.http.routers.traffic.entrypoints=websecure"
+            - "traefik.http.routers.traffic.tls.certresolver=letsencrypt"
+            - "traefik.http.middlewares.traffic-strip-prefix.stripprefix.prefixes=/traffic"
+            - "traefik.http.routers.traffic.middlewares=traffic-strip-prefix@docker"
         networks:
             - traffic_net
             - kafka-network
