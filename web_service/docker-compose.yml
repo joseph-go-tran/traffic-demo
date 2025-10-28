@@ -12,6 +12,7 @@ services:
       - "traefik.http.routers.web.tls.certresolver=letsencrypt"
     environment:
       - NODE_ENV=production
+      - VITE_API_URL=${VITE_API_URL}
     restart: unless-stopped
     networks:
       - traffic_net

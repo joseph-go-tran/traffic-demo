@@ -421,6 +421,9 @@ jobs:
           script: |
             mkdir -p ~/traffic_demo/web_service
             cd ~/traffic_demo/web_service
+            cat > .env <<EOF
+            VITE_API_URL=${{ vars.VITE_API_URL }}
+            EOF
             docker compose pull
             docker compose up -d --force-recreate
             docker image prune -f
