@@ -82,6 +82,7 @@ CORS_ALLOWED_ORIGINS = [
     "https://joseph.works",
     "https://www.joseph.works",
     "https://api.joseph.works",
+    "http://localhost:5173",  # For local testing
     # Add your production frontend URLs here
 ]
 
