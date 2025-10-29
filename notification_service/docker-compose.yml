@@ -39,7 +39,7 @@ services:
     container_name: dynamodb-local
     image: amazon/dynamodb-local:latest
     ports:
-      - "5433:5433"
+      - "5433:8000"
     command: "-jar DynamoDBLocal.jar -sharedDb -dbPath ./data"
     volumes:
       - ./dynamodb-data:/home/dynamodblocal/data
@@ -60,7 +60,7 @@ services:
       - "traefik.http.middlewares.dynamodb-admin-strip-prefix.stripprefix.prefixes=/dynamodb"
       - "traefik.http.routers.dynamodb-admin.middlewares=dynamodb-admin-strip-prefix@docker"
     environment:
-      DYNAMO_ENDPOINT: http://dynamodb-local:5433
+      DYNAMO_ENDPOINT: http://dynamodb-local:8000
     depends_on:
       - dynamodb-local
     networks:
