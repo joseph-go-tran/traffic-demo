@@ -50,8 +50,15 @@ services:
   dynamodb-admin:
     image: aaronshaf/dynamodb-admin
     container_name: dynamodb-admin
-    ports:
-      - "5555:8001"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traffic_net"
+      - "traefik.http.services.dynamodb-admin.loadbalancer.server.port=8001"
+      - "traefik.http.routers.dynamodb-admin.rule=Host(`api.joseph.works`) && PathPrefix(`/dynamodb`)"
+      - "traefik.http.routers.dynamodb-admin.entrypoints=websecure"
+      - "traefik.http.routers.dynamodb-admin.tls.certresolver=letsencrypt"
+      - "traefik.http.middlewares.dynamodb-admin-strip-prefix.stripprefix.prefixes=/dynamodb"
+      - "traefik.http.routers.dynamodb-admin.middlewares=dynamodb-admin-strip-prefix@docker"
     environment:
       DYNAMO_ENDPOINT: http://host.docker.internal:5433
     depends_on:

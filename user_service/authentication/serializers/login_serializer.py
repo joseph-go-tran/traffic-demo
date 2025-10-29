@@ -31,7 +31,7 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
 
             if not user:
                 raise serializers.ValidationError(
-                    "Unable to log in with provided credentials.",
+                    "Email or password incorrect.",
                     code="authorization",
                 )
 
