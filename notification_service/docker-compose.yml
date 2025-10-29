@@ -4,7 +4,7 @@ services:
     container_name: notification_service
     restart: always
     environment:
-      - DYNAMODB_ENDPOINT=${DYNAMODB_ENDPOINT:-http://dynamodb-local:5433}
+      - DYNAMODB_ENDPOINT=${DYNAMODB_ENDPOINT:-http://dynamodb-local:8000}
       - DYNAMODB_REGION=${DYNAMODB_REGION:-us-west-2}
       - DYNAMODB_ACCESS_KEY_ID=${DYNAMODB_ACCESS_KEY_ID}
       - DYNAMODB_SECRET_ACCESS_KEY=${DYNAMODB_SECRET_ACCESS_KEY}
@@ -54,11 +54,9 @@ services:
       - "traefik.enable=true"
       - "traefik.docker.network=traffic_net"
       - "traefik.http.services.dynamodb-admin.loadbalancer.server.port=8001"
-      - "traefik.http.routers.dynamodb-admin.rule=Host(`api.joseph.works`) && PathPrefix(`/dynamodb`)"
+      - "traefik.http.routers.dynamodb-admin.rule=Host(`db.joseph.works`)"
       - "traefik.http.routers.dynamodb-admin.entrypoints=websecure"
       - "traefik.http.routers.dynamodb-admin.tls.certresolver=letsencrypt"
-      - "traefik.http.middlewares.dynamodb-admin-strip-prefix.stripprefix.prefixes=/dynamodb"
-      - "traefik.http.routers.dynamodb-admin.middlewares=dynamodb-admin-strip-prefix@docker"
     environment:
       DYNAMO_ENDPOINT: http://dynamodb-local:8000
     depends_on:
