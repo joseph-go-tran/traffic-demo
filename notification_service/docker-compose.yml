@@ -60,7 +60,7 @@ services:
       - "traefik.http.middlewares.dynamodb-admin-strip-prefix.stripprefix.prefixes=/dynamodb"
       - "traefik.http.routers.dynamodb-admin.middlewares=dynamodb-admin-strip-prefix@docker"
     environment:
-      DYNAMO_ENDPOINT: http://host.docker.internal:5433
+      DYNAMO_ENDPOINT: http://dynamodb-local:5433
     depends_on:
       - dynamodb-local
     networks:
