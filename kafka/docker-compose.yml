@@ -42,7 +42,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.services.kafka-ui.loadbalancer.server.port=8080"
-      - "traefik.http.routers.kafka-ui.rule=Host(kafka.joseph.works)"
+      - "traefik.http.routers.kafka-ui.rule=Host(`kafka.joseph.works`)"
       - "traefik.http.routers.kafka-ui.entrypoints=websecure"
       - "traefik.http.routers.kafka-ui.tls.certresolver=letsencrypt"
     environment:
