@@ -1,13 +1,32 @@
 import axios, { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
 
-// Base API URLs - you can set these from environment variables
-const USER_SERVICE_URL =
-    import.meta.env.VITE_API_URL + "/users/api/v1" || "http://localhost:8000/api/v1";
-const ROUTING_API_URL =
-    import.meta.env.VITE_API_URL + "/routing/api/v1" || "http://localhost:8001/api/v1";
-const TRAFFIC_API_URL =
-    import.meta.env.VITE_API_URL + "/traffic/api/v1" || "http://localhost:8002/api/v1";
+// Runtime configuration - reads from window object or falls back to build-time env
+const getApiUrl = () => {
+    // Try to get from runtime config (injected via index.html)
+    const runtimeConfig = (window as any).__RUNTIME_CONFIG__;
+    if (runtimeConfig?.VITE_API_URL) {
+        return runtimeConfig.VITE_API_URL;
+    }
+    // Fall back to build-time environment variable
+    return import.meta.env.VITE_API_URL || "";
+};
 
+const BASE_API_URL = getApiUrl();
+
+// Base API URLs - you can set these from environment variables
+const USER_SERVICE_URL = BASE_API_URL
+    ? `${BASE_API_URL}/users/api/v1`
+    : "http://localhost:8000/api/v1";
+
+const ROUTING_API_URL = BASE_API_URL
+    ? `${BASE_API_URL}/routing/api/v1`
+    : "http://localhost:8001/api/v1";
+
+const TRAFFIC_API_URL = BASE_API_URL
+    ? `${BASE_API_URL}/traffic/api/v1`
+    : "http://localhost:8002/api/v1";
+
+console.log("Base API URL:", BASE_API_URL);
 console.log("User Service URL:", USER_SERVICE_URL);
 console.log("Routing API URL:", ROUTING_API_URL);
 console.log("Traffic API URL:", TRAFFIC_API_URL);

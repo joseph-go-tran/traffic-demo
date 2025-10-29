@@ -10,6 +10,12 @@
       crossorigin=""/>
   </head>
   <body>
+    <!-- Runtime configuration - will be replaced at runtime -->
+    <script>
+      window.__RUNTIME_CONFIG__ = {
+        VITE_API_URL: '__VITE_API_URL__'
+      };
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

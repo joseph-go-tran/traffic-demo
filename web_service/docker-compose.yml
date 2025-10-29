@@ -12,7 +12,8 @@ services:
       - "traefik.http.routers.web.tls.certresolver=letsencrypt"
     environment:
       - NODE_ENV=production
-      - VITE_API_URL=${VITE_API_URL}
+      # Set this to your API gateway URL (without trailing slash)
+      - VITE_API_URL=${VITE_API_URL:-https://joseph.works}
     restart: unless-stopped
     networks:
       - traffic_net
