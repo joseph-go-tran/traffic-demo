@@ -16,12 +16,12 @@ services:
       - zookeeper
     ports:
       - "9092:9092"
-      - "9093:9093"
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://kafka:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
@@ -41,13 +41,10 @@ services:
       - kafka
     labels:
       - "traefik.enable=true"
-      - "traefik.docker.network=traffic_net"
       - "traefik.http.services.kafka-ui.loadbalancer.server.port=8080"
-      - "traefik.http.routers.kafka-ui.rule=Host(`api.joseph.works`) && PathPrefix(`/kafka`)"
+      - "traefik.http.routers.kafka-ui.rule=Host(kafka.joseph.works)"
       - "traefik.http.routers.kafka-ui.entrypoints=websecure"
       - "traefik.http.routers.kafka-ui.tls.certresolver=letsencrypt"
-      - "traefik.http.middlewares.kafka-ui-strip-prefix.stripprefix.prefixes=/kafka"
-      - "traefik.http.routers.kafka-ui.middlewares=kafka-ui-strip-prefix@docker"
     environment:
       KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
