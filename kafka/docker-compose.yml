@@ -9,6 +9,7 @@ services:
       - "2181:2181"
     networks:
       - kafka-network
+
   kafka:
     image: confluentinc/cp-kafka:7.5.0
     container_name: kafka
@@ -41,6 +42,7 @@ services:
       - kafka
     labels:
       - "traefik.enable=true"
+      - "traefik.docker.network=traffic_net"
       - "traefik.http.services.kafka-ui.loadbalancer.server.port=8080"
       - "traefik.http.routers.kafka-ui.rule=Host(`kafka.joseph.works`)"
       - "traefik.http.routers.kafka-ui.entrypoints=websecure"
@@ -51,7 +53,10 @@ services:
       KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
     networks:
       - kafka-network
+      - traffic_net
 
 networks:
   kafka-network:
+    external: true
+  traffic_net:
     external: true
