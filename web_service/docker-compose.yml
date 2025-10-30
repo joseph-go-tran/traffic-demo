@@ -14,6 +14,7 @@ services:
       - NODE_ENV=production
       # Set this to your API gateway URL (without trailing slash)
       - VITE_API_URL=${VITE_API_URL:-https://joseph.works}
+      - VITE_NOTIFICATION_WS_URL=${VITE_NOTIFICATION_WS_URL:-wss://api.joseph.works}
     restart: unless-stopped
     networks:
       - traffic_net
