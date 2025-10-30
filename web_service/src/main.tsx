@@ -35,11 +35,12 @@ const getNotificationWsUrl = () => {
         return runtimeConfig.VITE_NOTIFICATION_WS_URL;
     }
     // Fall back to build-time environment variable
-    return import.meta.env.VITE_NOTIFICATION_WS_URL || "http://localhost:3000";
+    return import.meta.env.VITE_NOTIFICATION_WS_URL || "wss://api.joseph.works";
 };
 
 // Get WebSocket URL from environment variable or default to localhost
 const NOTIFICATION_WS_URL = getNotificationWsUrl();
+console.log(NOTIFICATION_WS_URL);
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
