@@ -20,5 +20,6 @@ find /usr/share/nginx/html -type f -name "*.js" -exec sed -i \
 
 echo "Configuration injected successfully"
 
+
 # Start nginx
 exec nginx -g 'daemon off;'
