@@ -102,7 +102,7 @@ export const useWebSocket = (
         console.log("Connecting to WebSocket:", socketUrl);
 
         const socket = io(socketUrl, {
-            path: "/socket.io/",
+            path: "/notifications/socket.io/",
             reconnection,
             reconnectionAttempts,
             reconnectionDelay,
