@@ -27,8 +27,19 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+const getNotificationWsUrl = () => {
+    // Try to get from runtime config (injected via index.html)
+    const runtimeConfig = (window as any).__RUNTIME_CONFIG__;
+    if (runtimeConfig?.VITE_NOTIFICATION_WS_URL) {
+        return runtimeConfig.VITE_NOTIFICATION_WS_URL;
+    }
+    // Fall back to build-time environment variable
+    return import.meta.env.VITE_NOTIFICATION_WS_URL || "http://localhost:3000";
+};
+
 // Get WebSocket URL from environment variable or default to localhost
-const NOTIFICATION_WS_URL = (import.meta.env.VITE_NOTIFICATION_WS_URL as string) || 'http://localhost:3000';
+const NOTIFICATION_WS_URL = getNotificationWsUrl();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
