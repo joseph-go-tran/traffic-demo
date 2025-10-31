@@ -144,8 +144,6 @@ export default function TrafficReportModal({
       });
       setLocationInput('');
 
-      onClose();
-
       // Show success message
       setPopupConfig({
         title: 'Report Submitted!',
@@ -153,6 +151,7 @@ export default function TrafficReportModal({
         type: 'success'
       });
       setShowPopup(true);
+      onClose();
 
     } catch (error) {
       console.error('Error submitting traffic report:', error);
@@ -163,8 +162,7 @@ export default function TrafficReportModal({
       });
       setShowPopup(true);
     } finally {
-      setIsSubmitting(false);
-    }
+      setIsSubmitting(false);    }
   };
 
   if (!isOpen) return null;
