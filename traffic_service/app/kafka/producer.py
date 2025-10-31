@@ -24,7 +24,8 @@ class KafkaProducerService:
 
     def _initialize_producer(self):
         """Initialize Kafka producer with retry logic"""
-        broker = os.getenv("KAFKA_BROKER", "localhost:9092")
+        broker = os.getenv("KAFKA_BROKER", "kafka:29092")
+        print(broker)
 
         try:
             self._producer = KafkaProducer(
