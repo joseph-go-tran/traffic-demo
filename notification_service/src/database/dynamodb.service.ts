@@ -128,6 +128,8 @@ export class DynamoDBService implements OnModuleInit {
     const timestamp = Date.now();
     const createdAt = new Date().toISOString();
 
+    console.log(`Saving notification: ${NOTIFICATION_HISTORY_TABLE}`);
+
     const item: NotificationHistory = {
       id,
       timestamp,
@@ -142,6 +144,7 @@ export class DynamoDBService implements OnModuleInit {
 
     await this.docClient.send(command);
     this.logger.debug(`Notification saved: ${id}`);
+    console.log(`Notification saved: ${id}`);
 
     return item;
   }
