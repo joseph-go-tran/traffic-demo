@@ -3,6 +3,7 @@ import { X, MapPin, AlertTriangle, Construction, Car, Clock, Send, Navigation } 
 import { useGeolocation } from '../hooks/useGeolocation';
 import LocationInput from './LocationInput';
 import { apiService } from '../lib/api';
+import PopupModal from './PopupModal';
 
 interface TrafficReportModalProps {
   isOpen: boolean;
@@ -38,6 +39,14 @@ export default function TrafficReportModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [locationInput, setLocationInput] = useState('');
   const [useCurrentLocation, setUseCurrentLocation] = useState(!initialLocation);
+
+  // Popup modal states
+  const [showPopup, setShowPopup] = useState(false);
+  const [popupConfig, setPopupConfig] = useState({
+    title: '',
+    message: '',
+    type: 'info' as 'success' | 'error' | 'warning' | 'info'
+  });
 
   // Get user's current location
   const { latitude, longitude, error: locationError } = useGeolocation({
@@ -97,7 +106,12 @@ export default function TrafficReportModal({
     e.preventDefault();
 
     if (!report.description.trim() || (!report.location.lat && !report.location.lng)) {
-      alert('Please provide a description and location for the incident.');
+      setPopupConfig({
+        title: 'Missing Information',
+        message: 'Please provide a description and location for the incident.',
+        type: 'warning'
+      });
+      setShowPopup(true);
       return;
     }
 
@@ -133,11 +147,21 @@ export default function TrafficReportModal({
       onClose();
 
       // Show success message
-      alert('Traffic report submitted successfully! Thank you for helping other drivers.');
+      setPopupConfig({
+        title: 'Report Submitted!',
+        message: 'Traffic report submitted successfully! Thank you for helping other drivers.',
+        type: 'success'
+      });
+      setShowPopup(true);
 
     } catch (error) {
       console.error('Error submitting traffic report:', error);
-      alert('Failed to submit traffic report. Please try again.');
+      setPopupConfig({
+        title: 'Submission Failed',
+        message: 'Failed to submit traffic report. Please try again.',
+        type: 'error'
+      });
+      setShowPopup(true);
     } finally {
       setIsSubmitting(false);
     }
@@ -348,6 +372,15 @@ export default function TrafficReportModal({
           </form>
         </div>
       </div>
+
+      {/* Popup Modal for alerts */}
+      <PopupModal
+        isOpen={showPopup}
+        onClose={() => setShowPopup(false)}
+        title={popupConfig.title}
+        message={popupConfig.message}
+        type={popupConfig.type}
+      />
     </div>
   );
 }
