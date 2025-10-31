@@ -137,14 +137,23 @@ export class DynamoDBService implements OnModuleInit {
       ...notification,
     };
 
+    console.log('item:', item);
+
     const command = new PutCommand({
       TableName: NOTIFICATION_HISTORY_TABLE,
       Item: item,
     });
 
-    await this.docClient.send(command);
-    this.logger.debug(`Notification saved: ${id}`);
-    console.log(`Notification saved: ${id}`);
+    console.log('PutCommand:', command);
+
+    try {
+      await this.docClient.send(command);
+      this.logger.debug(`Notification saved: ${id}`);
+      console.log(`Notification saved: ${id}`);
+    } catch (error) {
+      console.error('Error saving notification:', error);
+      throw error; // hoặc handle riêng nếu cần
+    }
 
     return item;
   }
