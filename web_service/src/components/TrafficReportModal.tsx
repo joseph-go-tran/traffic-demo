@@ -135,16 +135,6 @@ export default function TrafficReportModal({
         onReportSubmitted(response.data);
       }
 
-      // Reset form and close modal
-      setReport({
-        type: 'accident',
-        severity: 'medium',
-        location: initialLocation || { lat: 0, lng: 0 },
-        address: '',
-        description: ''
-      });
-      setLocationInput('');
-
       // Show success message
       setPopupConfig({
         title: 'Report Submitted!',
@@ -376,6 +366,15 @@ export default function TrafficReportModal({
         onClose={() => {
           console.log(popupConfig);
           if (popupConfig.type === 'success') {
+            // Reset form and close modal
+            setReport({
+              type: 'accident',
+              severity: 'medium',
+              location: initialLocation || { lat: 0, lng: 0 },
+              address: '',
+              description: ''
+            });
+            setLocationInput('');
             onClose();
           }
           setShowPopup(false)
