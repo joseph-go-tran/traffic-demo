@@ -60,7 +60,7 @@ export default function TrafficReportPage() {
   const handleReportSubmitted = (report: unknown) => {
     console.log('New report submitted:', report);
     refreshIncidents();
-    setShowReportModal(false);
+    // setShowReportModal(false);
   };
 
   // Statistics
