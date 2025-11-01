@@ -4,6 +4,7 @@ import { useGeolocation } from '../hooks/useGeolocation';
 import LocationInput from './LocationInput';
 import { apiService } from '../lib/api';
 import PopupModal from './PopupModal';
+import NotificationPanel from './NotificationPanel';
 
 interface TrafficReportModalProps {
   isOpen: boolean;
@@ -151,8 +152,6 @@ export default function TrafficReportModal({
         type: 'success'
       });
       setShowPopup(true);
-      onClose();
-
     } catch (error) {
       console.error('Error submitting traffic report:', error);
       setPopupConfig({
@@ -374,7 +373,12 @@ export default function TrafficReportModal({
       {/* Popup Modal for alerts */}
       <PopupModal
         isOpen={showPopup}
-        onClose={() => setShowPopup(false)}
+        onClose={() => {
+          if (popupConfig.type === 'success') {
+            onClose();
+          }
+          setShowPopup(false)
+        }}
         title={popupConfig.title}
         message={popupConfig.message}
         type={popupConfig.type}
