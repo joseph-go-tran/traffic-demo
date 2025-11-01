@@ -374,6 +374,7 @@ export default function TrafficReportModal({
       <PopupModal
         isOpen={showPopup}
         onClose={() => {
+          console.log(popupConfig);
           if (popupConfig.type === 'success') {
             onClose();
           }
