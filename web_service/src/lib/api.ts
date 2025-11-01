@@ -56,7 +56,45 @@ export const trafficApi = axios.create({
 
 // Request interceptor for auth tokens
 api.interceptors.request.use(
-    (config: AxiosRequestConfig) => {
+    (config) => {
+        // Get access token from localStorage
+        const accessToken =
+            localStorage.getItem("accessToken") ||
+            localStorage.getItem("authToken");
+
+        if (accessToken && config.headers) {
+            config.headers.Authorization = `Bearer ${accessToken}`;
+        }
+
+        return config;
+    },
+    (error: AxiosError) => {
+        return Promise.reject(error);
+    }
+);
+
+// Request interceptor for routingApi - Add auth tokens
+routingApi.interceptors.request.use(
+    (config) => {
+        // Get access token from localStorage
+        const accessToken =
+            localStorage.getItem("accessToken") ||
+            localStorage.getItem("authToken");
+
+        if (accessToken && config.headers) {
+            config.headers.Authorization = `Bearer ${accessToken}`;
+        }
+
+        return config;
+    },
+    (error: AxiosError) => {
+        return Promise.reject(error);
+    }
+);
+
+// Request interceptor for trafficApi - Add auth tokens
+trafficApi.interceptors.request.use(
+    (config) => {
         // Get access token from localStorage
         const accessToken =
             localStorage.getItem("accessToken") ||
@@ -122,6 +160,96 @@ api.interceptors.response.use(
         } else if (error.response?.status >= 500) {
             // Handle server errors
             console.error("Server error:", error.message);
+        }
+
+        return Promise.reject(error);
+    }
+);
+
+// Response interceptor for routingApi - Handle auth errors
+routingApi.interceptors.response.use(
+    (response: AxiosResponse) => {
+        return response;
+    },
+    async (error: AxiosError) => {
+        const originalRequest = error.config as any;
+
+        // Handle 401 errors - token refresh
+        if (error.response?.status === 401 && !originalRequest._retry) {
+            originalRequest._retry = true;
+
+            const refreshToken = localStorage.getItem("refreshToken");
+            if (refreshToken) {
+                try {
+                    const response = await api.post("/auth/token/refresh/", {
+                        refresh: refreshToken,
+                    });
+
+                    const { access } = response.data;
+                    localStorage.setItem("accessToken", access);
+                    localStorage.setItem("authToken", access);
+
+                    if (originalRequest.headers) {
+                        originalRequest.headers.Authorization = `Bearer ${access}`;
+                    }
+                    return routingApi(originalRequest);
+                } catch (refreshError) {
+                    localStorage.removeItem("authToken");
+                    localStorage.removeItem("accessToken");
+                    localStorage.removeItem("refreshToken");
+                    window.location.href = "/login";
+                }
+            } else {
+                localStorage.removeItem("authToken");
+                localStorage.removeItem("accessToken");
+                localStorage.removeItem("refreshToken");
+                window.location.href = "/login";
+            }
+        }
+
+        return Promise.reject(error);
+    }
+);
+
+// Response interceptor for trafficApi - Handle auth errors
+trafficApi.interceptors.response.use(
+    (response: AxiosResponse) => {
+        return response;
+    },
+    async (error: AxiosError) => {
+        const originalRequest = error.config as any;
+
+        // Handle 401 errors - token refresh
+        if (error.response?.status === 401 && !originalRequest._retry) {
+            originalRequest._retry = true;
+
+            const refreshToken = localStorage.getItem("refreshToken");
+            if (refreshToken) {
+                try {
+                    const response = await api.post("/auth/token/refresh/", {
+                        refresh: refreshToken,
+                    });
+
+                    const { access } = response.data;
+                    localStorage.setItem("accessToken", access);
+                    localStorage.setItem("authToken", access);
+
+                    if (originalRequest.headers) {
+                        originalRequest.headers.Authorization = `Bearer ${access}`;
+                    }
+                    return trafficApi(originalRequest);
+                } catch (refreshError) {
+                    localStorage.removeItem("authToken");
+                    localStorage.removeItem("accessToken");
+                    localStorage.removeItem("refreshToken");
+                    window.location.href = "/login";
+                }
+            } else {
+                localStorage.removeItem("authToken");
+                localStorage.removeItem("accessToken");
+                localStorage.removeItem("refreshToken");
+                window.location.href = "/login";
+            }
         }
 
         return Promise.reject(error);
