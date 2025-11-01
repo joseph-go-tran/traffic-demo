@@ -33,3 +33,5 @@ http:
           - X-User-ID
         authRequestHeaders:
           - Authorization
+        skipForwardAuth:
+          - OPTIONS
