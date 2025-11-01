@@ -34,7 +34,7 @@ http:
         authRequestHeaders:
           - Authorization
         skipForwardAuth:
-          - OPTIONS
+          - "OPTIONS"
 
     cors-allow-all:
       headers:
