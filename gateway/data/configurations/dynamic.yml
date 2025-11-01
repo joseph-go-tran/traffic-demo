@@ -35,3 +35,18 @@ http:
           - Authorization
         skipForwardAuth:
           - OPTIONS
+
+    cors-allow-all:
+      headers:
+        accessControlAllowOriginList:
+          - "https://joseph.works"
+        accessControlAllowMethods:
+          - GET
+          - POST
+          - OPTIONS
+          - PUT
+          - DELETE
+        accessControlAllowHeaders:
+          - Authorization
+          - Content-Type
+        accessControlAllowCredentials: true

@@ -19,7 +19,7 @@ services:
             - "traefik.http.routers.routing.entrypoints=websecure"
             - "traefik.http.routers.routing.tls.certresolver=letsencrypt"
             - "traefik.http.middlewares.routing-strip-prefix.stripprefix.prefixes=/routing"
-            - "traefik.http.routers.routing.middlewares=jwt-verify@file,routing-strip-prefix@docker"
+            - "traefik.http.routers.routing.middlewares=jwt-verify@file,cors-allow-all@file,routing-strip-prefix@docker"
         networks:
             - traffic_net
 
