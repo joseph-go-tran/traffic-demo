@@ -24,6 +24,7 @@ services:
             - traffic_net
             - kafka-network
 
+
 networks:
     traffic_net:
         external: true
