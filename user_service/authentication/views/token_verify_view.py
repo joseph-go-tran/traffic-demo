@@ -29,27 +29,40 @@ class TokenVerifyView(APIView):
         return None
 
     def verify_token(self, token):
+        if not token:
+            return {
+                "valid": False,
+                "user_id": None,
+            }, status.HTTP_401_UNAUTHORIZED
+
         try:
             access_token = AccessToken(token)
             user_id = access_token.get("user_id")
-            return {"valid": True, "user_id": user_id}, 200
+            return {"valid": True, "user_id": user_id}, status.HTTP_200_OK
         except TokenError:
-            return {"valid": False, "user_id": None}, 401
+            return {
+                "valid": False,
+                "user_id": None,
+            }, status.HTTP_401_UNAUTHORIZED
         except Exception:
-            return {"valid": False, "user_id": None}, 401
+            return {
+                "valid": False,
+                "user_id": None,
+            }, status.HTTP_401_UNAUTHORIZED
 
     def post(self, request):
         token = self.get_token_from_request(request)
-        result = self.verify_token(token)
-        return Response(result, status=status.HTTP_200_OK)
+        result, code = self.verify_token(token)
+        return Response(result, status=code)
 
     def get(self, request):
         token = self.get_token_from_request(request)
         print(token)
-        result, status = self.verify_token(token)
-        print(result, status)
+        result, code = self.verify_token(token)
+        print("Token verification result:", result)
+        print("Token verification status:", code)
 
-        response = Response(result, status=status)
+        response = Response(result, status=code)
         if result["valid"]:
             response["X-User-ID"] = str(result["user_id"])
         return response
