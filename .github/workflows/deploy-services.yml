@@ -485,4 +485,5 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script:
+            cd ~/traffic_demo/gateway
             docker compose up -d --force-recreate

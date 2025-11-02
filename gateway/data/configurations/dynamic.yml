@@ -36,7 +36,6 @@ http:
         skipForwardAuth:
           - OPTIONS
 
-
     # cors-allow-all:
     #   headers:
     #     accessControlAllowOriginList:
