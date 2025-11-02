@@ -76,6 +76,7 @@ services:
 
 volumes:
     django_template_db:
+        name: django_template_db
 
 networks:
     traffic_net:

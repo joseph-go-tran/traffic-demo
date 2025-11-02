@@ -57,10 +57,7 @@ class TokenVerifyView(APIView):
 
     def get(self, request):
         token = self.get_token_from_request(request)
-        print(token)
         result, code = self.verify_token(token)
-        print("Token verification result:", result)
-        print("Token verification status:", code)
 
         response = Response(result, status=code)
         if result["valid"]:
