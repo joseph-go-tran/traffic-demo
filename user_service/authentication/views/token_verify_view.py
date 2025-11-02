@@ -19,12 +19,10 @@ class TokenVerifyView(APIView):
     authentication_classes = []
 
     def get_token_from_request(self, request):
-        # 1️⃣ Check Authorization header
         auth_header = request.headers.get("Authorization")
         if auth_header and auth_header.startswith("Bearer "):
             return auth_header.split(" ", 1)[1]
 
-        # 2️⃣ Check POST body (for client)
         if hasattr(request, "data"):
             return request.data.get("token")
 
@@ -34,11 +32,11 @@ class TokenVerifyView(APIView):
         try:
             access_token = AccessToken(token)
             user_id = access_token.get("user_id")
-            return {"valid": True, "user_id": user_id}
+            return {"valid": True, "user_id": user_id}, 200
         except TokenError:
-            return {"valid": False, "user_id": None}
+            return {"valid": False, "user_id": None}, 401
         except Exception:
-            return {"valid": False, "user_id": None}
+            return {"valid": False, "user_id": None}, 401
 
     def post(self, request):
         token = self.get_token_from_request(request)
@@ -47,9 +45,11 @@ class TokenVerifyView(APIView):
 
     def get(self, request):
         token = self.get_token_from_request(request)
-        result = self.verify_token(token)
+        print(token)
+        result, status = self.verify_token(token)
+        print(result, status)
 
-        response = Response(result, status=status.HTTP_200_OK)
+        response = Response(result, status=status)
         if result["valid"]:
             response["X-User-ID"] = str(result["user_id"])
         return response
