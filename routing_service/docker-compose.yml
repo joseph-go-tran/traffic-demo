@@ -18,7 +18,8 @@ services:
             - "traefik.http.routers.routing.rule=Host(`api.joseph.works`) && PathPrefix(`/routing`)"
             - "traefik.http.routers.routing.entrypoints=websecure"
             - "traefik.http.routers.routing.tls.certresolver=letsencrypt"
-            - "traefik.http.routers.routing.middlewares=routing-strip-prefix@docker"
+            # - "traefik.http.routers.routing.middlewares=routing-strip-prefix@docker"
+            - "traefik.http.routers.routing.middlewares=cors-allow-all@file,jwt-verify@file,routing-strip-prefix@docker"
             - "traefik.http.middlewares.routing-strip-prefix.stripprefix.prefixes=/routing"
         networks:
             - traffic_net
