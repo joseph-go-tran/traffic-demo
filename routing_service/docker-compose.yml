@@ -1,7 +1,31 @@
 services:
-    routing:
+    routing_1:
         image: josephgotran/routing-service:latest
-        container_name: routing_service
+        container_name: routing_service_1
+        restart: always
+        command: >
+            sh -c "./docker-entrypoint.sh && uvicorn main:app --host 0.0.0.0 --port 8001"
+        environment:
+            - DB_DEV_ROUTING_NAME=${DB_DEV_ROUTING_NAME:-gos_routing}
+            - DB_DEV_USER=${DB_DEV_USER:-admin}
+            - DB_DEV_PASSWORD=${DB_DEV_PASSWORD:-admin}
+            - DB_DEV_HOST=${DB_DEV_HOST:-db}
+            - DB_DEV_PORT=${DB_DEV_PORT:-5432}
+            - TOMTOM_API_KEY=${TOMTOM_API_KEY}
+        labels:
+            - "traefik.enable=true"
+            - "traefik.http.services.routing.loadbalancer.server.port=8001"
+            - "traefik.http.routers.routing.rule=Host(`api.joseph.works`) && PathPrefix(`/routing`)"
+            - "traefik.http.routers.routing.entrypoints=websecure"
+            - "traefik.http.routers.routing.tls.certresolver=letsencrypt"
+            - "traefik.http.routers.routing.middlewares=cors-allow-all@file,jwt-verify@file,routing-strip-prefix@docker"
+            - "traefik.http.middlewares.routing-strip-prefix.stripprefix.prefixes=/routing"
+        networks:
+            - traffic_net
+
+    routing_2:
+        image: josephgotran/routing-service:latest
+        container_name: routing_service_2
         restart: always
         command: >
             sh -c "./docker-entrypoint.sh && uvicorn main:app --host 0.0.0.0 --port 8001"
