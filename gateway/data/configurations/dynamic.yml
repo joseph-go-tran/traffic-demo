@@ -25,16 +25,16 @@ http:
         users:
           - admin:$apr1$TW/CD4tX$f8TywIA5kT7YbTfg1xYYh1
 
-    # jwt-verify:
-    #   forwardAuth:
-    #     address: http://user_service:8000/api/v1/auth/token/verify/
-    #     trustForwardHeader: true
-    #     authResponseHeaders:
-    #       - X-User-ID
-    #     authRequestHeaders:
-    #       - Authorization
-    #     skipForwardAuth:
-    #       - OPTIONS
+    jwt-verify:
+      forwardAuth:
+        address: http://user_service:8000/api/v1/auth/token/verify/
+        trustForwardHeader: true
+        authResponseHeaders:
+          - X-User-ID
+        authRequestHeaders:
+          - Authorization
+        skipForwardAuth:
+          - OPTIONS
 
     # cors-allow-all:
     #   headers:
